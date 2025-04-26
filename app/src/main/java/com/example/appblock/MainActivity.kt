@@ -14,6 +14,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.title = "App List"
+
         // Initialize RecyclerView
         val recyclerView = findViewById<RecyclerView>(R.id.apps_recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -22,6 +25,13 @@ class MainActivity : AppCompatActivity() {
         val apps = getInstalledApps()
 
         recyclerView.adapter = AppAdapter(apps)
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish() // Close this activity and return to dashboard
+        return true
     }
 
     private fun getInstalledApps(): List<AppInfo> {
