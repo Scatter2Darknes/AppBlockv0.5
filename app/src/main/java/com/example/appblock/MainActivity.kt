@@ -1,5 +1,6 @@
 package com.example.appblock
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
@@ -64,7 +65,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun showAppDetailsDialog(app: AppInfo) {
+        // Double-check exclusion (shouldn't be needed but safe-guard)
+        if (ExcludedApps.isExcluded(app.packageName)) {
+            AlertDialog.Builder(this)
+                .setTitle("Protected App")
+                .setMessage("This app cannot be blocked for system security reasons")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+
+
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -78,8 +92,11 @@ class MainActivity : AppCompatActivity() {
         dialogView.findViewById<TextView>(R.id.dialog_package_name).text = app.packageName
 
         // Add this ↓
+//        val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
+//        checkBox.isChecked = app.isBlocked
+
         val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
-        checkBox.isChecked = app.isBlocked
+        checkBox.text = "Block ${app.name}"
 
         checkBox.setOnCheckedChangeListener { _, isChecked ->
             // Update storage
@@ -124,9 +141,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         for (info in resolveInfos) {
-            val appName = info.loadLabel(pm)?.toString() ?: "Unknown App"
-            val icon = info.loadIcon(pm)
             val packageName = info.activityInfo.packageName
+            // Skip excluded apps
+            if (ExcludedApps.isExcluded(packageName)) continue
+
+            val appName = info.loadLabel(pm).toString() ?: "Unknown App"
+            val icon = info.loadIcon(pm)
             apps.add(AppInfo(appName, packageName, icon, blockedApps.contains(packageName)))
         }
 

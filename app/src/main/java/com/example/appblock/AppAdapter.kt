@@ -34,6 +34,10 @@ class AppAdapter(val apps: MutableList<AppInfo>) :
         holder.appIcon.setImageDrawable(app.icon)
         holder.checkBox.isChecked = app.isBlocked // Bind checkbox state
 
+        // Make checkbox non-interactable
+        holder.checkBox.isEnabled = false  // Disables interaction
+        holder.checkBox.isChecked = app.isBlocked
+
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(app)
         }

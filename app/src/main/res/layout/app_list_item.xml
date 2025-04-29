@@ -34,12 +34,24 @@
             android:textColor="#666"/>
     </LinearLayout>
 
+<!--    <CheckBox-->
+<!--        android:id="@+id/check_box"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginEnd="8dp"-->
+<!--        android:minWidth="48dp"-->
+<!--        android:minHeight="48dp" />-->
+
     <CheckBox
         android:id="@+id/check_box"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="0dp"
         android:minWidth="48dp"
-        android:minHeight="48dp" />
+        android:minHeight="48dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:duplicateParentState="true"
+        />
 
 </LinearLayout>
