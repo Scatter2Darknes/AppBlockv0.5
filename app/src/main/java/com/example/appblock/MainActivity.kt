@@ -5,28 +5,60 @@ import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Toolbar setup
         setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.title = "App List"
+        supportActionBar?.title = "Select Apps"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // Initialize RecyclerView
         val recyclerView = findViewById<RecyclerView>(R.id.apps_recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Load apps and populate RecyclerView
-        val apps = getInstalledApps()
+        val adapter = AppAdapter(getInstalledApps())
+        recyclerView.adapter = adapter
 
-        recyclerView.adapter = AppAdapter(apps)
+        // Handle item clicks
+        adapter.onItemClick = { app ->
+            showAppDetailsDialog(app)
+        }
+    }
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    private fun showAppDetailsDialog(app: AppInfo) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        // Populate dialog views
+        dialogView.findViewById<ImageView>(R.id.dialog_app_icon).setImageDrawable(app.icon)
+        dialogView.findViewById<TextView>(R.id.dialog_app_name).text = app.name
+        dialogView.findViewById<TextView>(R.id.dialog_package_name).text = app.packageName
+
+        val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            // TODO: Save blocked state (we'll implement later)
+        }
+
+        dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     override fun onSupportNavigateUp(): Boolean {
