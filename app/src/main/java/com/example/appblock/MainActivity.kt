@@ -14,27 +14,53 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+// In MainActivity.kt
+import android.content.SharedPreferences
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var storage: StorageHelper
+    private lateinit var adapter: AppAdapter // Make adapter a class property
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
 
-        // Toolbar setup
-        setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.title = "Select Apps"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            // Initialize storage FIRST
+            storage = StorageHelper(applicationContext) // MOVED THIS LINE UP
 
-        val recyclerView = findViewById<RecyclerView>(R.id.apps_recycler_view)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+            val apps = getInstalledApps().apply {
+                forEach { app ->
+                    app.isBlocked = storage.getBlockedApps().contains(app.packageName)
+                }
+            }
 
-        val adapter = AppAdapter(getInstalledApps())
-        recyclerView.adapter = adapter
 
-        // Handle item clicks
-        adapter.onItemClick = { app ->
-            showAppDetailsDialog(app)
+
+
+
+            // Toolbar setup
+            setSupportActionBar(findViewById(R.id.toolbar))
+            supportActionBar?.title = "Select Apps"
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+            val recyclerView = findViewById<RecyclerView>(R.id.apps_recycler_view)
+            recyclerView.layoutManager = LinearLayoutManager(this)
+
+//        val adapter = AppAdapter(getInstalledApps())
+//        recyclerView.adapter = adapter
+
+            adapter = AppAdapter(apps)
+            recyclerView.adapter = adapter
+
+            // Handle item clicks
+            adapter.onItemClick = { app ->
+                showAppDetailsDialog(app)
+            }
+        } catch (e:Exception) {
+            Log.e("CRASH", "MainActivity failed: ${e.stackTraceToString()}")
+            finish()
         }
     }
 
@@ -44,14 +70,30 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .create()
 
+
+
         // Populate dialog views
         dialogView.findViewById<ImageView>(R.id.dialog_app_icon).setImageDrawable(app.icon)
         dialogView.findViewById<TextView>(R.id.dialog_app_name).text = app.name
         dialogView.findViewById<TextView>(R.id.dialog_package_name).text = app.packageName
 
+        // Add this ↓
         val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
+        checkBox.isChecked = app.isBlocked
+
         checkBox.setOnCheckedChangeListener { _, isChecked ->
-            // TODO: Save blocked state (we'll implement later)
+            // Update storage
+            val blockedApps = storage.getBlockedApps().toMutableSet().apply {
+                if (isChecked) add(app.packageName) else remove(app.packageName)
+            }
+            storage.saveBlockedApps(blockedApps)
+
+            // Update the app object in the adapter
+            app.isBlocked = isChecked
+            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
+            if (position != -1) {
+                adapter.notifyItemChanged(position)
+            }
         }
 
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
@@ -66,25 +108,28 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun getInstalledApps(): List<AppInfo> {
+    private fun getInstalledApps(): MutableList<AppInfo> {
         val pm = packageManager
         val apps = mutableListOf<AppInfo>()
+        val blockedApps = storage.getBlockedApps()
 
-        // Query for all apps with a launcher intent
         val intent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
 
-        val resolveInfos: List<ResolveInfo> = pm.queryIntentActivities(intent, 0)
-        Log.d("APP_LIST", "Found ${resolveInfos.size} apps")
-
-        for (info in resolveInfos) {
-            val appName = info.loadLabel(pm).toString()
-            val icon: Drawable = info.loadIcon(pm)
-            val packageName = info.activityInfo.packageName
-            apps.add(AppInfo(appName, packageName, icon))
+        val resolveInfos: List<ResolveInfo> = try {
+            pm.queryIntentActivities(intent, 0)
+        } catch (e: Exception) {
+            emptyList()
         }
 
-        return apps.sortedBy { it.name }
+        for (info in resolveInfos) {
+            val appName = info.loadLabel(pm)?.toString() ?: "Unknown App"
+            val icon = info.loadIcon(pm)
+            val packageName = info.activityInfo.packageName
+            apps.add(AppInfo(appName, packageName, icon, blockedApps.contains(packageName)))
+        }
+
+        return apps.sortedBy { it.name }.toMutableList()
     }
 }

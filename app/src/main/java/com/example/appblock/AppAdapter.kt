@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class AppAdapter(private val apps: List<AppInfo>) :
+class AppAdapter(val apps: MutableList<AppInfo>) :
     RecyclerView.Adapter<AppAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -32,6 +32,7 @@ class AppAdapter(private val apps: List<AppInfo>) :
         holder.appName.text = app.name
         holder.appPackage.text = app.packageName
         holder.appIcon.setImageDrawable(app.icon)
+        holder.checkBox.isChecked = app.isBlocked // Bind checkbox state
 
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(app)
