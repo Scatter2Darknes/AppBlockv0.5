@@ -3,19 +3,28 @@ package com.example.appblock
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class AppAdapter(val apps: MutableList<AppInfo>) :
+class AppAdapter(var apps: MutableList<AppInfo>, private val showRemove: Boolean = false ) :
+
     RecyclerView.Adapter<AppAdapter.ViewHolder>() {
+    var onRemoveClick: ((AppInfo) -> Unit)? = null
+
+    fun updateList(newList: List<AppInfo>) {
+        apps = newList.toMutableList()
+        notifyDataSetChanged()
+    }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val appIcon: ImageView = view.findViewById(R.id.app_icon)
         val appName: TextView = view.findViewById(R.id.app_name)
         val appPackage: TextView = view.findViewById(R.id.app_package)
         val checkBox: CheckBox = view.findViewById(R.id.check_box)
+        val removeButton: Button = view.findViewById(R.id.btn_remove)
     }
 
     // Add item click listener
@@ -40,6 +49,17 @@ class AppAdapter(val apps: MutableList<AppInfo>) :
 
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(app)
+        }
+
+        if (showRemove) {
+            holder.checkBox.visibility = View.GONE
+            holder.removeButton.visibility = View.VISIBLE
+            holder.removeButton.setOnClickListener {
+                onRemoveClick?.invoke(app)
+            }
+        } else {
+            holder.checkBox.visibility = View.VISIBLE
+            holder.removeButton.visibility = View.GONE
         }
     }
 

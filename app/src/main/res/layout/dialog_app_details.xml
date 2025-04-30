@@ -6,36 +6,45 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- App Icon (Centered) -->
     <ImageView
         android:id="@+id/dialog_app_icon"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="App icon"/>
 
+    <!-- App Name -->
     <TextView
         android:id="@+id/dialog_app_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:layout_marginTop="8dp"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:textColor="@android:color/black"/>
 
+    <!-- Package Name -->
     <TextView
         android:id="@+id/dialog_package_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:layout_marginTop="4dp"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:textColor="#666666"/>
 
+    <!-- Block Checkbox -->
     <CheckBox
         android:id="@+id/dialog_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:layout_marginTop="16dp"
-        android:text="Block this app"
-        android:layout_gravity="center"/>
+        android:minHeight="48dp"
+        android:text="@string/block_this_app" />
 
+    <!-- OK Button -->
     <Button
         android:id="@+id/btn_ok"
         android:layout_width="100dp"

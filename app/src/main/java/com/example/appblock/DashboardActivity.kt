@@ -16,5 +16,9 @@ class DashboardActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_app_list).setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
+
+        findViewById<Button>(R.id.btn_monitored_apps).setOnClickListener {
+            startActivity(Intent(this, MonitoredAppsActivity::class.java))
+        }
     }
 }

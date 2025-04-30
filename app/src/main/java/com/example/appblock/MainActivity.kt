@@ -59,6 +59,8 @@ class MainActivity : AppCompatActivity() {
             adapter.onItemClick = { app ->
                 showAppDetailsDialog(app)
             }
+
+            supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark) // Create this drawable
         } catch (e:Exception) {
             Log.e("CRASH", "MainActivity failed: ${e.stackTraceToString()}")
             finish()
@@ -77,40 +79,33 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-
-
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
 
 
-
-        // Populate dialog views
         dialogView.findViewById<ImageView>(R.id.dialog_app_icon).setImageDrawable(app.icon)
         dialogView.findViewById<TextView>(R.id.dialog_app_name).text = app.name
         dialogView.findViewById<TextView>(R.id.dialog_package_name).text = app.packageName
 
-        // Add this ↓
-//        val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
-//        checkBox.isChecked = app.isBlocked
 
+
+        // Set initial state WITHOUT triggering listener
         val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
-        checkBox.text = "Block ${app.name}"
+        checkBox.setOnCheckedChangeListener(null)  // Disable listener temporarily
+        checkBox.isChecked = app.isBlocked
 
+        // Now set up listener
         checkBox.setOnCheckedChangeListener { _, isChecked ->
-            // Update storage
             val blockedApps = storage.getBlockedApps().toMutableSet().apply {
                 if (isChecked) add(app.packageName) else remove(app.packageName)
             }
             storage.saveBlockedApps(blockedApps)
-
-            // Update the app object in the adapter
             app.isBlocked = isChecked
+
             val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
-            if (position != -1) {
-                adapter.notifyItemChanged(position)
-            }
+            if (position != -1) adapter.notifyItemChanged(position)
         }
 
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
@@ -123,6 +118,13 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish() // Close this activity and return to dashboard
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh list when returning from background
+        adapter.apps = getInstalledApps()
+        adapter.notifyDataSetChanged()
     }
 
     private fun getInstalledApps(): MutableList<AppInfo> {

@@ -14,7 +14,7 @@
         android:theme="@style/ToolbarTheme"/>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/apps_recycler_view"
+        android:id="@+id/monitored_apps_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingTop="8dp"/>
