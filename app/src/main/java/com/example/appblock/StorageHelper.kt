@@ -18,4 +18,15 @@ class StorageHelper(context: Context) {
     fun getBlockedApps(): Set<String> {
         return HashSet(prefs.getStringSet("BLOCKED", emptySet()) ?: emptySet())
     }
+
+    // Add these methods
+    fun saveBlockDelay(packageName: String, delay: Int) {
+        prefs.edit {
+            putInt("DELAY_$packageName", delay)
+        }
+    }
+
+    fun getBlockDelay(packageName: String): Int {
+        return prefs.getInt("DELAY_$packageName", 10) // Default 10 seconds
+    }
 }

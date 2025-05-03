@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">App Block</string>
-    <string name="block_this_app">Block this app</string>
+    <string name="invalid_delay">Enter a number ≥1</string>
 </resources>

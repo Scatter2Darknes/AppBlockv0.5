@@ -34,15 +34,39 @@
         android:gravity="center"
         android:textColor="#666666"/>
 
+
     <!-- Block Checkbox -->
     <CheckBox
         android:id="@+id/dialog_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="16dp"
         android:minHeight="48dp"
-        android:text="@string/block_this_app" />
+        android:text="Enable App Blocking" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        android:id="@+id/delay_container">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Start-up Delay (seconds):"
+            android:textSize="12sp"/>
+
+        <EditText
+            android:id="@+id/delay_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:text="10"/>
+    </LinearLayout>
 
     <!-- OK Button -->
     <Button

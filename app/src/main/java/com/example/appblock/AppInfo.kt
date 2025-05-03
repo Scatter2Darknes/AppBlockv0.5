@@ -6,5 +6,6 @@ data class AppInfo(
     val name: String,
     val packageName: String,
     val icon: Drawable,
-    var isBlocked: Boolean = false
+    var isBlocked: Boolean = false,
+    var blockDelay: Int = 10 // New property
 )

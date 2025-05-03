@@ -17,6 +17,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 // In MainActivity.kt
 import android.content.SharedPreferences
+import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,51 +71,79 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private fun showAppDetailsDialog(app: AppInfo) {
-        // Double-check exclusion (shouldn't be needed but safe-guard)
-        if (ExcludedApps.isExcluded(app.packageName)) {
-            AlertDialog.Builder(this)
-                .setTitle("Protected App")
-                .setMessage("This app cannot be blocked for system security reasons")
-                .setPositiveButton("OK", null)
-                .show()
-            return
-        }
-
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
 
-
-        dialogView.findViewById<ImageView>(R.id.dialog_app_icon).setImageDrawable(app.icon)
-        dialogView.findViewById<TextView>(R.id.dialog_app_name).text = app.name
-        dialogView.findViewById<TextView>(R.id.dialog_package_name).text = app.packageName
-
-
-
-        // Set initial state WITHOUT triggering listener
-        val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
-        checkBox.setOnCheckedChangeListener(null)  // Disable listener temporarily
-        checkBox.isChecked = app.isBlocked
-
-        // Now set up listener
-        checkBox.setOnCheckedChangeListener { _, isChecked ->
-            val blockedApps = storage.getBlockedApps().toMutableSet().apply {
-                if (isChecked) add(app.packageName) else remove(app.packageName)
-            }
-            storage.saveBlockedApps(blockedApps)
-            app.isBlocked = isChecked
-
-            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
-            if (position != -1) adapter.notifyItemChanged(position)
+        // ====== 1. POPULATE APP DETAILS FIRST ======
+        // App Icon
+        dialogView.findViewById<ImageView>(R.id.dialog_app_icon).apply {
+            setImageDrawable(app.icon)
+            contentDescription = "${app.name} icon"
         }
 
+        // App Name
+        dialogView.findViewById<TextView>(R.id.dialog_app_name).apply {
+            text = app.name
+            setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.black))
+        }
+
+        // Package Name
+        dialogView.findViewById<TextView>(R.id.dialog_package_name).apply {
+            text = app.packageName
+            setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.darker_gray))
+        }
+
+        // ====== 2. CONFIGURE BLOCKING SETTINGS AFTER ======
+        // Initialize views
+        val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
+        val delayContainer = dialogView.findViewById<LinearLayout>(R.id.delay_container)
+        val delayInput = dialogView.findViewById<EditText>(R.id.delay_input)
+
+        // 1. Load saved delay (not default 10)
+        val savedDelay = storage.getBlockDelay(app.packageName)
+        delayInput.setText(savedDelay.toString())
+
+        // 2. Initialize checkbox state and delay visibility
+        checkBox.isChecked = app.isBlocked
+        delayContainer.visibility = if (app.isBlocked) View.VISIBLE else View.GONE
+
+        // 3. Update delay visibility IMMEDIATELY on checkbox change
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            delayContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+
+        // 4. Save changes ONLY when OK is clicked
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
+            val isBlocked = checkBox.isChecked
+
+            // Update blocking state
+            val blockedApps = storage.getBlockedApps().toMutableSet().apply {
+                if (isBlocked) add(app.packageName) else remove(app.packageName)
+            }
+            storage.saveBlockedApps(blockedApps)
+
+            // Update delay
+            try {
+                val delay = delayInput.text.toString().toInt().coerceAtLeast(1)
+                storage.saveBlockDelay(app.packageName, delay)
+                app.blockDelay = delay
+            } catch (e: NumberFormatException) {
+                delayInput.error = getString(R.string.invalid_delay)
+                return@setOnClickListener // Prevent dialog close on error
+            }
+
+            // Update UI
+            app.isBlocked = isBlocked
+            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
+            if (position != -1) adapter.notifyItemChanged(position)
+
             dialog.dismiss()
         }
 
+        // Show dialog after setup
         dialog.show()
     }
 
