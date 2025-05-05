@@ -1,1 +1,45 @@
-fsdafasd
+All files added/modifed by me (Kevin) 
+**From how I see it from android studio**
+
+1. In app/manifests
+
+  AndroidManifest.xml
+
+2. In app/kotlin+java/com.example.appblock
+
+  AppAdapter.kt
+  Appinfo.kt
+  DashboardActivity.kt
+  ExcludedApps.kt
+  MainActivity.kt
+  MonitoredAppsActivity.kt
+  StorageHelper.kt
+
+3. In res
+
+  3a. In app/res/drawable
+
+    ic_arrow_back_dark.xml
+
+  3b. Created layout folder (app/res/layout)
+
+    activity_dashboard.xml
+    activity_main.xml
+    activity_monitored_apps.xml
+    app_list_item.xml
+    dialog_app_details.xml
+
+  3c. Modified values folder (app/res/values)
+
+    colors.xml
+    strings.xml
+    themes.xml
+
+
+4. Gradle Scripts
+
+    build.gradle.kts (Project: App_Block)
+    build.gradle.kts (Module :app)
+    
+
+    
