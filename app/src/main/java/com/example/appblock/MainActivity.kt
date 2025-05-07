@@ -1,5 +1,6 @@
 package com.example.appblock
 
+import TimeRange
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ResolveInfo
@@ -21,11 +22,17 @@ import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
+import android.app.TimePickerDialog
+import android.widget.Switch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var storage: StorageHelper
     private lateinit var adapter: AppAdapter // Make adapter a class property
+    companion object {
+        const val TIME_PICKER_START = 0
+        const val TIME_PICKER_END = 1
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -115,6 +122,47 @@ class MainActivity : AppCompatActivity() {
             delayContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
 
+        // Time Blocking Elements
+        val timeSwitch = dialogView.findViewById<Switch>(R.id.switch_time_block)
+        val btnStart = dialogView.findViewById<Button>(R.id.btn_set_start_time)
+        val btnEnd = dialogView.findViewById<Button>(R.id.btn_set_end_time)
+        val txtTimeRange = dialogView.findViewById<TextView>(R.id.txt_time_range)
+
+        // Load existing time ranges
+        var currentStartTime: Pair<Int, Int>? = null
+        var currentEndTime: Pair<Int, Int>? = null
+        val timeRanges = storage.getTimeRanges(app.packageName)
+        if (timeRanges.isNotEmpty()) {
+            val firstRange = timeRanges.first()
+            currentStartTime = Pair(firstRange.startHour, firstRange.startMinute)
+            currentEndTime = Pair(firstRange.endHour, firstRange.endMinute)
+            updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
+        }
+
+        // Time Picker Listeners
+        fun showTimePicker(type: Int) {
+            val initialHour = if (type == TIME_PICKER_START) currentStartTime?.first ?: 0 else currentEndTime?.first ?: 0
+            val initialMinute = if (type == TIME_PICKER_START) currentStartTime?.second ?: 0 else currentEndTime?.second ?: 0
+
+            TimePickerDialog(
+                this,
+                { _, hour, minute ->
+                    when (type) {
+                        TIME_PICKER_START -> currentStartTime = hour to minute
+                        TIME_PICKER_END -> currentEndTime = hour to minute
+                    }
+                    updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
+                },
+                initialHour,
+                initialMinute,
+                true
+            ).show()
+        }
+
+        btnStart.setOnClickListener { showTimePicker(TIME_PICKER_START) }
+        btnEnd.setOnClickListener { showTimePicker(TIME_PICKER_END) }
+
+
         // 4. Save changes ONLY when OK is clicked
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
             val isBlocked = checkBox.isChecked
@@ -135,6 +183,23 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener // Prevent dialog close on error
             }
 
+            // Save time ranges
+            if (timeSwitch.isChecked && currentStartTime != null && currentEndTime != null) {
+                val timeRange = TimeRange(
+                    currentStartTime!!.first,
+                    currentStartTime!!.second,
+                    currentEndTime!!.first,
+                    currentEndTime!!.second
+                )
+                if (timeRange.isValid()) {
+                    storage.saveTimeRanges(app.packageName, listOf(timeRange))
+                    app.timeRanges = listOf(timeRange)
+                } else {
+                    txtTimeRange.error = "Invalid time range"
+                    return@setOnClickListener
+                }
+            }
+
             // Update UI
             app.isBlocked = isBlocked
             val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
@@ -145,6 +210,25 @@ class MainActivity : AppCompatActivity() {
 
         // Show dialog after setup
         dialog.show()
+    }
+
+    private fun updateTimeDisplay(
+        textView: TextView,
+        start: Pair<Int, Int>?,
+        end: Pair<Int, Int>?
+    ) {
+        if (start == null || end == null) {
+            textView.text = "No time set"
+            return
+        }
+
+        textView.text = String.format(
+            "%02d:%02d - %02d:%02d",
+            start.first,
+            start.second,
+            end.first,
+            end.second
+        )
     }
 
     override fun onSupportNavigateUp(): Boolean {
