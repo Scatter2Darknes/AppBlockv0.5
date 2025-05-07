@@ -47,7 +47,7 @@ class StorageHelper(context: Context) {
         return prefs.getInt("DELAY_$packageName", 10) // Default 10 seconds
     }
 
-    // Add to StorageHelper class
+    // Add these methods
     fun saveTimeRestrictionEnabled(packageName: String, enabled: Boolean) {
         prefs.edit {
             putBoolean("TIME_ENABLED_$packageName", enabled)

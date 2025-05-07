@@ -128,17 +128,23 @@ class MainActivity : AppCompatActivity() {
         val btnEnd = dialogView.findViewById<Button>(R.id.btn_set_end_time)
         val txtTimeRange = dialogView.findViewById<TextView>(R.id.txt_time_range)
 
+        // Initialize time switch state
+        val hasTimeRestrictions = storage.getTimeRanges(app.packageName).isNotEmpty()
+        timeSwitch.isChecked = hasTimeRestrictions
+
+
         // Load existing time ranges
         var currentStartTime: Pair<Int, Int>? = null
         var currentEndTime: Pair<Int, Int>? = null
-        val timeRanges = storage.getTimeRanges(app.packageName)
+
+        // Load existing time ranges if any
+        var timeRanges = storage.getTimeRanges(app.packageName)
         if (timeRanges.isNotEmpty()) {
             val firstRange = timeRanges.first()
-            currentStartTime = Pair(firstRange.startHour, firstRange.startMinute)
-            currentEndTime = Pair(firstRange.endHour, firstRange.endMinute)
+            currentStartTime = firstRange.startHour to firstRange.startMinute
+            currentEndTime = firstRange.endHour to firstRange.endMinute
             updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
         }
-
         // Time Picker Listeners
         fun showTimePicker(type: Int) {
             val initialHour = if (type == TIME_PICKER_START) currentStartTime?.first ?: 0 else currentEndTime?.first ?: 0
@@ -151,6 +157,7 @@ class MainActivity : AppCompatActivity() {
                         TIME_PICKER_START -> currentStartTime = hour to minute
                         TIME_PICKER_END -> currentEndTime = hour to minute
                     }
+                    txtTimeRange.error = null // Clear previous errors
                     updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
                 },
                 initialHour,
@@ -173,6 +180,11 @@ class MainActivity : AppCompatActivity() {
             }
             storage.saveBlockedApps(blockedApps)
 
+            // Update UI
+            app.isBlocked = isBlocked
+            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
+            if (position != -1) adapter.notifyItemChanged(position)
+
             // Update delay
             try {
                 val delay = delayInput.text.toString().toInt().coerceAtLeast(1)
@@ -183,30 +195,36 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener // Prevent dialog close on error
             }
 
-            // Save time ranges
-            if (timeSwitch.isChecked && currentStartTime != null && currentEndTime != null) {
+            // Save/Clear time restrictions
+            if (timeSwitch.isChecked) {
+                if (currentStartTime == null || currentEndTime == null) {
+                    txtTimeRange.error = "Please set both start and end times"
+                    return@setOnClickListener // Prevent dialog close
+                }
+
                 val timeRange = TimeRange(
                     currentStartTime!!.first,
                     currentStartTime!!.second,
                     currentEndTime!!.first,
                     currentEndTime!!.second
                 )
-                if (timeRange.isValid()) {
-                    storage.saveTimeRanges(app.packageName, listOf(timeRange))
-                    app.timeRanges = listOf(timeRange)
-                } else {
-                    txtTimeRange.error = "Invalid time range"
-                    return@setOnClickListener
-                }
-            }
 
-            // Update UI
-            app.isBlocked = isBlocked
-            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
-            if (position != -1) adapter.notifyItemChanged(position)
+                if (!timeRange.isValid()) {
+                    txtTimeRange.error = "End time must be after start time"
+                    return@setOnClickListener // Prevent dialog close
+                }
+
+                storage.saveTimeRanges(app.packageName, listOf(timeRange))
+                app.timeRanges = listOf(timeRange)
+            } else {
+                // Clear time restrictions if switch is off
+                storage.saveTimeRanges(app.packageName, emptyList())
+                app.timeRanges = emptyList()
+            }
 
             dialog.dismiss()
         }
+
 
         // Show dialog after setup
         dialog.show()
