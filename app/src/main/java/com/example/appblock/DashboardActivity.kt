@@ -1,24 +1,36 @@
 package com.example.appblock
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
+import com.example.appblock.databinding.ActivityDashboardBinding
+import com.example.appblock.lock.LockFragment
+import com.example.appblock.summary.SummaryFragment
+import com.example.appblock.tasks.TaskFragment
 
 class DashboardActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityDashboardBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_dashboard)
+        binding = ActivityDashboardBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        findViewById<Button>(R.id.btn_app_list).setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
-        }
+        replaceFragment(LockFragment())
 
-        findViewById<Button>(R.id.btn_monitored_apps).setOnClickListener {
-            startActivity(Intent(this, MonitoredAppsActivity::class.java))
+        binding.bottomNavigation.setOnItemSelectedListener {
+            when (it.itemId) {
+                R.id.lock_menu -> replaceFragment(LockFragment())
+                R.id.summary_menu -> replaceFragment(SummaryFragment())
+                R.id.task_menu -> replaceFragment(TaskFragment())
+            }
+            true
         }
+    }
+
+    private fun replaceFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
 }

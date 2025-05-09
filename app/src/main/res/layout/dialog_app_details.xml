@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- App Details (keep this section) -->
+    <!-- App Details -->
     <ImageView
         android:id="@+id/dialog_app_icon"
         android:layout_width="64dp"
@@ -29,83 +29,96 @@
         android:layout_marginTop="4dp"
         android:gravity="center"/>
 
-    <!-- App Blocking Section -->
+    <!-- Main Blocking Toggle -->
     <CheckBox
         android:id="@+id/dialog_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start"
         android:layout_marginTop="16dp"
         android:minHeight="48dp"
         android:text="Block this app" />
 
-    <!-- Time Restrictions Section -->
-    <Switch
-        android:id="@+id/switch_time_block"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:minHeight="48dp"
-        android:text="Time Restrictions" />
-
+    <!-- Options Container (Hidden by default) -->
     <LinearLayout
-        android:id="@+id/delay_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Delay (seconds):"/>
-
-        <EditText
-            android:id="@+id/delay_input"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="number"/>
-    </LinearLayout>
-
-
-
-    <LinearLayout
-        android:id="@+id/time_block_container"
+        android:id="@+id/options_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:visibility="gone"
-        android:layout_marginTop="8dp">
+        android:visibility="gone">
 
+        <!-- Start-up Delay Switch -->
+        <Switch
+            android:id="@+id/switch_delay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start-up Delay"/>
+
+        <!-- Delay Input (Initially hidden) -->
         <LinearLayout
+            android:id="@+id/delay_input_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="8dp">
 
-            <Button
-                android:id="@+id/btn_set_start_time"
+            <TextView
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Set Start"/>
+                android:layout_weight="1"
+                android:text="Delay (seconds):"/>
 
-            <Button
-                android:id="@+id/btn_set_end_time"
+            <EditText
+                android:id="@+id/delay_input"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Set End"/>
+                android:layout_weight="1"
+                android:inputType="number"/>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/txt_time_range"
+        <!-- Time Restrictions Section -->
+        <Switch
+            android:id="@+id/switch_time_block"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time Restrictions"
+            android:layout_marginTop="16dp"/>
+
+        <LinearLayout
+            android:id="@+id/time_block_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"/>
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_set_start_time"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Set Start"/>
+
+                <Button
+                    android:id="@+id/btn_set_end_time"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Set End"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txt_time_range"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"/>
+        </LinearLayout>
     </LinearLayout>
 
     <!-- OK Button -->

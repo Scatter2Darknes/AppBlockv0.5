@@ -100,28 +100,45 @@ class MainActivity : AppCompatActivity() {
 
         // ====== 2. BLOCKING SETTINGS ======
         val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
-        val delayContainer = dialogView.findViewById<LinearLayout>(R.id.delay_container)
+        val optionsContainer = dialogView.findViewById<LinearLayout>(R.id.options_container)
+        val delaySwitch = dialogView.findViewById<Switch>(R.id.switch_delay)
+        val delayInputContainer = dialogView.findViewById<LinearLayout>(R.id.delay_input_container)
         val delayInput = dialogView.findViewById<EditText>(R.id.delay_input)
+        val timeSwitch = dialogView.findViewById<Switch>(R.id.switch_time_block)
+        val timeContainer = dialogView.findViewById<LinearLayout>(R.id.time_block_container)
 
-        // Delay configuration
-        val savedDelay = storage.getBlockDelay(app.packageName)
-        delayInput.setText(savedDelay.toString())
+        // Initial state
         checkBox.isChecked = app.isBlocked
-        delayContainer.visibility = if (app.isBlocked) View.VISIBLE else View.GONE
+        optionsContainer.visibility = if (app.isBlocked) View.VISIBLE else View.GONE
+        delayInput.setText(app.blockDelay.toString())
 
+        // Configure delay switch
+        val savedDelay = storage.getBlockDelay(app.packageName)
+        delaySwitch.isChecked = savedDelay > 0
+        delayInputContainer.visibility = if (savedDelay > 0) View.VISIBLE else View.GONE
+        delayInput.setText(if (savedDelay > 0) savedDelay.toString() else "10")
+
+        // Delay switch listener
+        delaySwitch.setOnCheckedChangeListener { _, isChecked ->
+            delayInputContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+
+        // Load time restrictions
+        val isTimeEnabled = storage.isTimeRestrictionEnabled(app.packageName)
+        timeSwitch.isChecked = isTimeEnabled
+        timeContainer.visibility = if (isTimeEnabled) View.VISIBLE else View.GONE
+
+        // SINGLE Checkbox listener for options container
         checkBox.setOnCheckedChangeListener { _, isChecked ->
-            delayContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
+            optionsContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
 
         // ====== 3. TIME RESTRICTIONS ======
-        val timeSwitch = dialogView.findViewById<Switch>(R.id.switch_time_block)
         val btnStart = dialogView.findViewById<Button>(R.id.btn_set_start_time)
         val btnEnd = dialogView.findViewById<Button>(R.id.btn_set_end_time)
         val txtTimeRange = dialogView.findViewById<TextView>(R.id.txt_time_range)
-        val timeContainer = dialogView.findViewById<LinearLayout>(R.id.time_block_container)
 
         // Load time restriction state
-        val isTimeEnabled = storage.isTimeRestrictionEnabled(app.packageName)
         timeSwitch.isChecked = isTimeEnabled  // Set switch state
         timeContainer.visibility = if (isTimeEnabled) View.VISIBLE else View.GONE
 
@@ -189,7 +206,15 @@ class MainActivity : AppCompatActivity() {
 
             // Save delay
             try {
-                val delay = delayInput.text.toString().toInt().coerceAtLeast(1)
+                val delay = if (delaySwitch.isChecked) {
+                    try {
+                        delayInput.text.toString().toInt().coerceAtLeast(1)
+                    } catch (e: Exception) {
+                        0 // Fallback if invalid input
+                    }
+                } else {
+                    0
+                }
                 storage.saveBlockDelay(app.packageName, delay)
                 app.blockDelay = delay
             } catch (e: NumberFormatException) {

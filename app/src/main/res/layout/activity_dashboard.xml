@@ -1,25 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/btn_app_list"
-        android:layout_width="wrap_content"
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Manage Blocked Apps"
-        android:textSize="18sp"/>
-
-    <Button
-        android:id="@+id/btn_monitored_apps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="View Blocked Apps"
-        android:layout_marginTop="16dp"
-        android:textSize="18sp"/>
-
+        app:menu="@menu/bottom_nav_menu"/>
 </LinearLayout>

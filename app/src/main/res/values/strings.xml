@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">App Block</string>
     <string name="invalid_delay">Enter a number ≥1</string>
-</resources>
+
+    <string-array name="task_filters">
+        <item>All</item>
+        <item>Completed</item>
+        <item>Incomplete</item>
+    </string-array>
+    </resources>

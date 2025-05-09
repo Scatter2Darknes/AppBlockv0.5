@@ -5,6 +5,9 @@ plugins {
 }
 
 android {
+    buildFeatures {
+        viewBinding = true
+    }
     namespace = "com.example.appblock"
     compileSdk = 35
 
