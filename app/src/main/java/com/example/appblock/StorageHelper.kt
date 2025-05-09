@@ -25,15 +25,14 @@ class StorageHelper(context: Context) {
         return gson.fromJson(json, type) ?: emptyList()
     }
 
+    // For saving
     fun saveBlockedApps(packageNames: Set<String>) {
-        prefs.edit {
-            putStringSet("BLOCKED", packageNames)
-        }
+        prefs.edit { putStringSet("BLOCKED", packageNames) }
     }
 
-
+    // For retrieving
     fun getBlockedApps(): Set<String> {
-        return HashSet(prefs.getStringSet("BLOCKED", emptySet()) ?: emptySet())
+        return prefs.getStringSet("BLOCKED", emptySet()) ?: emptySet()
     }
 
     // Add these methods

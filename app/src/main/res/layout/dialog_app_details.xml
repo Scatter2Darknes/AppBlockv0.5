@@ -39,7 +39,14 @@
         android:minHeight="48dp"
         android:text="Block this app" />
 
-
+    <!-- Time Restrictions Section -->
+    <Switch
+        android:id="@+id/switch_time_block"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:minHeight="48dp"
+        android:text="Time Restrictions" />
 
     <LinearLayout
         android:id="@+id/delay_container"
@@ -63,14 +70,7 @@
             android:inputType="number"/>
     </LinearLayout>
 
-    <!-- Time Restrictions Section -->
-    <Switch
-        android:id="@+id/switch_time_block"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:minHeight="48dp"
-        android:text="Time Restrictions" />
+
 
     <LinearLayout
         android:id="@+id/time_block_container"

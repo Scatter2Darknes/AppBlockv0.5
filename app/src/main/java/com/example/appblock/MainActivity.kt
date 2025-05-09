@@ -80,69 +80,83 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAppDetailsDialog(app: AppInfo) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
+        val dialog = AlertDialog.Builder(this).setView(dialogView).create()
 
-        // ====== 1. POPULATE APP DETAILS FIRST ======
-        // App Icon
+        // ====== 1. POPULATE APP DETAILS ======
         dialogView.findViewById<ImageView>(R.id.dialog_app_icon).apply {
             setImageDrawable(app.icon)
             contentDescription = "${app.name} icon"
         }
 
-        // App Name
         dialogView.findViewById<TextView>(R.id.dialog_app_name).apply {
             text = app.name
             setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.black))
         }
 
-        // Package Name
         dialogView.findViewById<TextView>(R.id.dialog_package_name).apply {
             text = app.packageName
             setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.darker_gray))
         }
 
-        // ====== 2. CONFIGURE BLOCKING SETTINGS AFTER ======
-        // Initialize views
+        // ====== 2. BLOCKING SETTINGS ======
         val checkBox = dialogView.findViewById<CheckBox>(R.id.dialog_checkbox)
         val delayContainer = dialogView.findViewById<LinearLayout>(R.id.delay_container)
         val delayInput = dialogView.findViewById<EditText>(R.id.delay_input)
 
-        // 1. Load saved delay (not default 10)
+        // Delay configuration
         val savedDelay = storage.getBlockDelay(app.packageName)
         delayInput.setText(savedDelay.toString())
-
-        // 2. Initialize checkbox state and delay visibility
         checkBox.isChecked = app.isBlocked
         delayContainer.visibility = if (app.isBlocked) View.VISIBLE else View.GONE
 
-        // 3. Update delay visibility IMMEDIATELY on checkbox change
         checkBox.setOnCheckedChangeListener { _, isChecked ->
             delayContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
 
-        // Time Blocking Elements
+        // ====== 3. TIME RESTRICTIONS ======
         val timeSwitch = dialogView.findViewById<Switch>(R.id.switch_time_block)
         val btnStart = dialogView.findViewById<Button>(R.id.btn_set_start_time)
         val btnEnd = dialogView.findViewById<Button>(R.id.btn_set_end_time)
         val txtTimeRange = dialogView.findViewById<TextView>(R.id.txt_time_range)
+        val timeContainer = dialogView.findViewById<LinearLayout>(R.id.time_block_container)
+
+        // Load time restriction state
+        val isTimeEnabled = storage.isTimeRestrictionEnabled(app.packageName)
+        timeSwitch.isChecked = isTimeEnabled  // Set switch state
+        timeContainer.visibility = if (isTimeEnabled) View.VISIBLE else View.GONE
 
         // Load existing time ranges
+        val timeRanges = storage.getTimeRanges(app.packageName)
         var currentStartTime: Pair<Int, Int>? = null
         var currentEndTime: Pair<Int, Int>? = null
-        val timeRanges = storage.getTimeRanges(app.packageName)
+
         if (timeRanges.isNotEmpty()) {
             val firstRange = timeRanges.first()
-            currentStartTime = Pair(firstRange.startHour, firstRange.startMinute)
-            currentEndTime = Pair(firstRange.endHour, firstRange.endMinute)
+            currentStartTime = firstRange.startHour to firstRange.startMinute
+            currentEndTime = firstRange.endHour to firstRange.endMinute
             updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
         }
 
-        // Time Picker Listeners
+        timeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            timeContainer.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (isChecked && currentStartTime == null && currentEndTime == null) {
+                // Initialize with default times if none exist
+                currentStartTime = 9 to 0  // 9:00 AM
+                currentEndTime = 17 to 0    // 5:00 PM
+                updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
+            }
+        }
+
+        // ====== 4. TIME PICKERS ======
         fun showTimePicker(type: Int) {
-            val initialHour = if (type == TIME_PICKER_START) currentStartTime?.first ?: 0 else currentEndTime?.first ?: 0
-            val initialMinute = if (type == TIME_PICKER_START) currentStartTime?.second ?: 0 else currentEndTime?.second ?: 0
+            val initialHour = when (type) {
+                TIME_PICKER_START -> currentStartTime?.first ?: 0
+                else -> currentEndTime?.first ?: 0
+            }
+            val initialMinute = when (type) {
+                TIME_PICKER_START -> currentStartTime?.second ?: 0
+                else -> currentEndTime?.second ?: 0
+            }
 
             TimePickerDialog(
                 this,
@@ -151,6 +165,7 @@ class MainActivity : AppCompatActivity() {
                         TIME_PICKER_START -> currentStartTime = hour to minute
                         TIME_PICKER_END -> currentEndTime = hour to minute
                     }
+                    txtTimeRange.error = null
                     updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
                 },
                 initialHour,
@@ -162,29 +177,32 @@ class MainActivity : AppCompatActivity() {
         btnStart.setOnClickListener { showTimePicker(TIME_PICKER_START) }
         btnEnd.setOnClickListener { showTimePicker(TIME_PICKER_END) }
 
-
-        // 4. Save changes ONLY when OK is clicked
+        // ====== 5. SAVE HANDLER ======
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
+            // Save blocking state
             val isBlocked = checkBox.isChecked
-
-            // Update blocking state
             val blockedApps = storage.getBlockedApps().toMutableSet().apply {
                 if (isBlocked) add(app.packageName) else remove(app.packageName)
             }
             storage.saveBlockedApps(blockedApps)
+            app.isBlocked = isBlocked
 
-            // Update delay
+            // Save delay
             try {
                 val delay = delayInput.text.toString().toInt().coerceAtLeast(1)
                 storage.saveBlockDelay(app.packageName, delay)
                 app.blockDelay = delay
             } catch (e: NumberFormatException) {
                 delayInput.error = getString(R.string.invalid_delay)
-                return@setOnClickListener // Prevent dialog close on error
+                return@setOnClickListener
             }
 
-            // Save time ranges
-            if (timeSwitch.isChecked && currentStartTime != null && currentEndTime != null) {
+            // Save time restrictions
+            val isTimeEnabled = timeSwitch.isChecked
+            storage.saveTimeRestrictionEnabled(app.packageName, isTimeEnabled)
+
+            // Always save time ranges if valid (regardless of switch state)
+            if (currentStartTime != null && currentEndTime != null) {
                 val timeRange = TimeRange(
                     currentStartTime!!.first,
                     currentStartTime!!.second,
@@ -194,21 +212,22 @@ class MainActivity : AppCompatActivity() {
                 if (timeRange.isValid()) {
                     storage.saveTimeRanges(app.packageName, listOf(timeRange))
                     app.timeRanges = listOf(timeRange)
-                } else {
+                } else if (isTimeEnabled) { // Only validate if enabled
                     txtTimeRange.error = "Invalid time range"
                     return@setOnClickListener
                 }
+            } else if (isTimeEnabled) { // Only require times if enabled
+                txtTimeRange.error = "Set start/end times"
+                return@setOnClickListener
             }
 
-            // Update UI
-            app.isBlocked = isBlocked
-            val position = adapter.apps.indexOfFirst { it.packageName == app.packageName }
-            if (position != -1) adapter.notifyItemChanged(position)
+            // Always save enabled state
+            storage.saveTimeRestrictionEnabled(app.packageName, isTimeEnabled)
 
+            adapter.notifyItemChanged(adapter.apps.indexOfFirst { it.packageName == app.packageName })
             dialog.dismiss()
         }
 
-        // Show dialog after setup
         dialog.show()
     }
 
@@ -265,7 +284,12 @@ class MainActivity : AppCompatActivity() {
 
             val appName = info.loadLabel(pm).toString() ?: "Unknown App"
             val icon = info.loadIcon(pm)
-            apps.add(AppInfo(appName, packageName, icon, blockedApps.contains(packageName)))
+            apps.add(AppInfo(
+                name = appName,
+                packageName = packageName,
+                icon = icon,
+                isBlocked = blockedApps.contains(packageName) // Check against full set
+            ))
         }
 
         return apps.sortedBy { it.name }.toMutableList()
