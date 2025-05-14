@@ -50,7 +50,7 @@ class MonitoredAppsActivity : AppCompatActivity() {
             }
         }
 
-        recyclerView.adapter = AppAdapter(apps.sortedBy { it.name }.toMutableList())
+        recyclerView.adapter = AppAdapter(apps.sortedBy { it.name }.toMutableList(),storage)
     }
 
     override fun onSupportNavigateUp(): Boolean {

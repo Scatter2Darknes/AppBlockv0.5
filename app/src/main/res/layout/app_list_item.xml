@@ -32,6 +32,30 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textColor="#666"/>
+
+        <!-- Add after package name TextView -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/txt_delay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:textColor="#666666"/>
+
+            <TextView
+                android:id="@+id/txt_time_window"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:textColor="#666666"/>
+        </LinearLayout>
     </LinearLayout>
 
 <!--    <CheckBox-->

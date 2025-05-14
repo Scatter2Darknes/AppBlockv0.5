@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
 //        val adapter = AppAdapter(getInstalledApps())
 //        recyclerView.adapter = adapter
 
-            adapter = AppAdapter(apps)
+            adapter = AppAdapter(apps,storage)
             recyclerView.adapter = adapter
 
             // Handle item clicks
@@ -238,7 +238,10 @@ class MainActivity : AppCompatActivity() {
                     storage.saveTimeRanges(app.packageName, listOf(timeRange))
                     app.timeRanges = listOf(timeRange)
                 } else if (isTimeEnabled) { // Only validate if enabled
-                    txtTimeRange.error = "Invalid time range"
+                    txtTimeRange.apply {
+                        error = "Invalid time range - end must be after start"
+                        visibility = View.VISIBLE
+                    }
                     return@setOnClickListener
                 }
             } else if (isTimeEnabled) { // Only require times if enabled
