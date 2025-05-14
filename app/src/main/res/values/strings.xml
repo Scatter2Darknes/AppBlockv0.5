@@ -2,9 +2,12 @@
     <string name="app_name">App Block</string>
     <string name="invalid_delay">Enter a number ≥1</string>
 
+    <string name="summary_title">Installed Apps</string>
+    <string name="app_icon_desc">Application icon</string>
+
     <string-array name="task_filters">
         <item>All</item>
         <item>Completed</item>
         <item>Incomplete</item>
     </string-array>
-    </resources>
+</resources>
