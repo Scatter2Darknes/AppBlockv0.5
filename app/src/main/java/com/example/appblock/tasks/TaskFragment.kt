@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment
 import com.example.appblock.R
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import android.util.Log
+
 
 class TaskFragment : Fragment() {
     private lateinit var adapter: ArrayAdapter<Task>
@@ -72,14 +74,18 @@ class TaskFragment : Fragment() {
         val type = object : TypeToken<MutableList<Task>>() {}.type
         taskList.addAll(Gson().fromJson(json, type))
 
-        addButton.setOnClickListener { showTaskDialog(null) }
+        addButton.setOnClickListener {
+            showTaskDialog(null)
+        }
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val task = filteredList[position]
+            Log.d("TaskClick", "Clicked task: ${task.name}, completed=${task.completed}")
+
             if (task.completed) {
                 showCompletedDialog(task, taskList.indexOf(task))
             } else {
-                showTaskDialog(task, position)
+                showIncompleteTaskDialog(task, position)
             }
         }
 
@@ -92,6 +98,7 @@ class TaskFragment : Fragment() {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 filterTasks()
             }
+
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -138,16 +145,34 @@ class TaskFragment : Fragment() {
         descField.setText(task?.description ?: "")
         dueField.setText(task?.dueDate ?: "")
 
-        AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle(if (task == null) "Create Task" else "Edit Task")
             .setView(dialogView)
-            .setPositiveButton(if (task == null) "Add" else "Save") { _, _ ->
+            .setPositiveButton(if (task == null) "Add" else "Save", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val button = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            button.setOnClickListener {
+                val name = nameField.text.toString().trim()
+
+                if (name.isBlank()) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Task name empty")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return@setOnClickListener
+                }
+
                 val newTask = Task(
-                    name = nameField.text.toString(),
-                    description = descField.text.toString(),
-                    dueDate = dueField.text.toString(),
+                    name = name,
+                    description = descField.text.toString().trim(),
+                    dueDate = dueField.text.toString().trim(),
                     completed = task?.completed ?: false
                 )
+
                 if (index != null) {
                     val realIndex = taskList.indexOf(filteredList[index])
                     taskList[realIndex] = newTask
@@ -156,22 +181,24 @@ class TaskFragment : Fragment() {
                 }
                 saveTasks()
                 filterTasks()
+                dialog.dismiss()
             }
-            .setNeutralButton("Delete") { _, _ ->
-                if (index != null) {
-                    val realIndex = taskList.indexOf(filteredList[index])
-                    taskList.removeAt(realIndex)
-                    saveTasks()
-                    filterTasks()
-                }
+        }
+
+        if (task != null && index != null) {
+            dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Delete") { _, _ ->
+                val realIndex = taskList.indexOf(filteredList[index])
+                taskList.removeAt(realIndex)
+                saveTasks()
+                filterTasks()
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
+
+        dialog.show()
     }
 
     private fun showCompletedDialog(task: Task, index: Int) {
         val message = "Description: ${task.description}\nCompleted on: ${task.dueDate}"
-
         AlertDialog.Builder(requireContext())
             .setTitle(task.name)
             .setMessage(message)
@@ -183,6 +210,46 @@ class TaskFragment : Fragment() {
             }
             .show()
     }
+
+    private fun showIncompleteTaskDialog(task: Task, index: Int) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_task_incomplete, null)
+
+        val titleView = dialogView.findViewById<TextView>(R.id.task_title)
+        val descView = dialogView.findViewById<TextView>(R.id.task_description)
+        val dueView = dialogView.findViewById<TextView>(R.id.task_due_date)
+        val checkBox = dialogView.findViewById<CheckBox>(R.id.task_finished_checkbox)
+
+        titleView.text = task.name
+        descView.text = task.description
+        dueView.text = "Due: ${task.dueDate}"
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton("OK", null)
+            .setNegativeButton("Edit", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                dialog.dismiss()
+                showTaskDialog(task, index)
+            }
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                if (checkBox.isChecked) {
+                    task.completed = true
+                    task.dueDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+                    saveTasks()
+                    filterTasks()
+                }
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
+    }
+
 
     private fun saveTasks() {
         val prefs = requireContext().getSharedPreferences("tasks", Context.MODE_PRIVATE)
