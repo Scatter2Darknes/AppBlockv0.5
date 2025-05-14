@@ -22,7 +22,7 @@ class AppAdapter(var apps: MutableList<AppInfo>, private val storage: StorageHel
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val appIcon: ImageView = view.findViewById(R.id.app_icon)
         val appName: TextView = view.findViewById(R.id.app_name)
-        val appPackage: TextView = view.findViewById(R.id.app_package)
+        //val appPackage: TextView = view.findViewById(R.id.app_package)
         val checkBox: CheckBox = view.findViewById(R.id.check_box)
         val removeButton: Button = view.findViewById(R.id.btn_remove)
         val txtDelay: TextView = view.findViewById(R.id.txt_delay)
@@ -41,35 +41,40 @@ class AppAdapter(var apps: MutableList<AppInfo>, private val storage: StorageHel
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val app = apps[position]
 
-        // Existing bindings
+        // Basic bindings
         holder.appName.text = app.name
-        holder.appPackage.text = app.packageName
         holder.appIcon.setImageDrawable(app.icon)
         holder.checkBox.isChecked = app.isBlocked
         holder.checkBox.isEnabled = false
 
-        // ====== NEW: Configuration-Specific Visibility ======
-        // Show delay only if explicitly configured (>0)
-        val delayVisible = app.blockDelay > 0
-        holder.txtDelay.visibility = if (delayVisible) View.VISIBLE else View.GONE
-        holder.txtDelay.text = "Delay: ${app.blockDelay}s"
+        // ====== Subtext Visibility Rules ======
+        // 1. Only show subtexts if app is blocked
+        val showSubtexts = app.isBlocked
 
-        // Show time window only if time restrictions are enabled AND ranges exist
-        val timeVisible = app.timeRanges.isNotEmpty() &&
-                storage.isTimeRestrictionEnabled(app.packageName) // Add storage to adapter
+        // 2. Delay subtext: Only show if delay is configured (>0)
+        val delayVisible = showSubtexts && app.blockDelay > 0
+        holder.txtDelay.visibility = if (delayVisible) View.VISIBLE else View.GONE
+        holder.txtDelay.text = "Delay: ${app.blockDelay}s" // Now uses AppInfo's property
+
+        // 3. Time subtext: Only show if time switch is ON AND ranges exist
+        val timeEnabled = storage.isTimeRestrictionEnabled(app.packageName)
+        val timeVisible = showSubtexts && timeEnabled && app.timeRanges.isNotEmpty()
         holder.txtTimeWindow.visibility = if (timeVisible) View.VISIBLE else View.GONE
-        holder.txtTimeWindow.text = buildString {
-            app.timeRanges.forEach { range ->
-                append("Locked: %02d:%02d - %02d:%02d".format(
-                    range.startHour,
-                    range.startMinute,
-                    range.endHour,
-                    range.endMinute
-                ))
+
+        if (timeVisible) {
+            holder.txtTimeWindow.text = buildString {
+                app.timeRanges.forEach { range -> // Use AppInfo's timeRanges
+                    append("Locked: %02d:%02d - %02d:%02d".format(
+                        range.startHour,
+                        range.startMinute,
+                        range.endHour,
+                        range.endMinute
+                    ))
+                }
             }
         }
 
-        // Remove button/checkbox visibility logic (keep existing)
+        // Remove button logic
         if (showRemove) {
             holder.checkBox.visibility = View.GONE
             holder.removeButton.visibility = View.VISIBLE
