@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.appblock.AppInfo
 import com.example.appblock.ExcludedApps
-import com.example.appblock.databinding.FragmentSummaryBinding  // This will be generated
+import com.example.appblock.databinding.FragmentSummaryBinding
 
 class SummaryFragment : Fragment() {
     private var _binding: FragmentSummaryBinding? = null
