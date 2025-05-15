@@ -24,6 +24,7 @@ import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import android.app.TimePickerDialog
 import android.widget.Switch
+import androidx.core.app.ActivityOptionsCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,10 +49,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
-
-
-
             // Toolbar setup
             setSupportActionBar(findViewById(R.id.toolbar))
             supportActionBar?.title = "Select Apps"
@@ -72,11 +69,26 @@ class MainActivity : AppCompatActivity() {
             }
 
             supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark) // Create this drawable
+            handleEditDeepLink()
         } catch (e:Exception) {
             Log.e("CRASH", "MainActivity failed: ${e.stackTraceToString()}")
             finish()
         }
     }
+
+    private fun handleEditDeepLink() {
+        val packageToEdit = intent.getStringExtra("EDIT_APP")
+        packageToEdit?.let { pkg ->
+            val appToEdit = adapter.apps.firstOrNull { it.packageName == pkg }
+            appToEdit?.let {
+                // Post to ensure UI is ready
+                findViewById<RecyclerView>(R.id.apps_recycler_view).post {
+                    showAppDetailsDialog(it)
+                }
+            }
+        }
+    }
+
 
     private fun showAppDetailsDialog(app: AppInfo) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_details, null)
@@ -264,10 +276,36 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish() // Close this activity and return to dashboard
-        return true
+
+
+    private fun returnToDashboard() {
+        if (isTaskRoot) {
+            super.onBackPressed()
+        } else {
+            val options = ActivityOptionsCompat.makeCustomAnimation(
+                this,
+                R.anim.slide_in_left,  // Return enter animation
+                R.anim.slide_out_right   // Return exit animation
+            )
+            startActivity(Intent(this, DashboardActivity::class.java), options.toBundle())
+            finish()
+        }
     }
+
+    // Handle back arrow (action bar)
+    override fun onSupportNavigateUp(): Boolean {
+        returnToDashboard()
+        return true // Indicate we've handled the event
+    }
+
+    // Handle system back button
+    override fun onBackPressed() {
+        super.onBackPressed()
+        returnToDashboard()
+    }
+
+
+
 
     override fun onResume() {
         super.onResume()

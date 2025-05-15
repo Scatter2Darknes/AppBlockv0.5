@@ -1,0 +1,4 @@
+<!-- File: res/transition/slide_right.xml -->
+<slide xmlns:android="http://schemas.android.com/apk/res/android"
+    android:slideEdge="right"
+    android:duration="300"/>
