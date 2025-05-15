@@ -4,5 +4,7 @@
     <style name="ToolbarTheme" parent="ThemeOverlay.AppCompat.Light">
         <item name="android:textColorPrimary">@color/toolbar_text</item>
         <item name="colorControlNormal">@color/toolbar_icons</item>
+        <item name="android:windowEnterAnimation">@transition/slide_right</item>
+        <item name="android:windowExitAnimation">@transition/slide_left</item>
     </style>
 </resources>

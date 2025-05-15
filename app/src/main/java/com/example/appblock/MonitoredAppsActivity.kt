@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -45,12 +46,46 @@ class MonitoredAppsActivity : AppCompatActivity() {
                     name = info.loadLabel(pm).toString(),
                     packageName = packageName,
                     icon = info.loadIcon(pm),
-                    isBlocked = true
+                    isBlocked = true,
+                    blockDelay = storage.getBlockDelay(packageName),
+                    timeRanges = storage.getTimeRanges(packageName)
                 ))
             }
         }
 
-        recyclerView.adapter = AppAdapter(apps.sortedBy { it.name }.toMutableList(),storage)
+        val adapter = AppAdapter(
+            apps.sortedBy { it.name }.toMutableList(),
+            storage,
+            showRemove = true
+        )
+
+        adapter.onRemoveClick = { app ->
+            launchEditScreenForApp(app)
+        }
+
+        recyclerView.adapter = adapter
+    }
+
+    private fun launchEditScreenForApp(app: AppInfo) {
+        // REVERSE ONLY THIS TRANSITION
+        val options = ActivityOptionsCompat.makeCustomAnimation(
+            this,
+            R.anim.slide_in_left,  // Enter from left
+            R.anim.slide_out_right  // Exit to right
+        )
+
+        Intent(this, MainActivity::class.java).apply {
+            putExtra("EDIT_APP", app.packageName)
+            startActivity(this, options.toBundle())
+        }
+
+        // Keep original finish behavior
+        finish()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadBlockedApps(findViewById(R.id.monitored_apps_list))
     }
 
     override fun onSupportNavigateUp(): Boolean {
