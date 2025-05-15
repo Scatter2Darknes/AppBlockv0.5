@@ -23,6 +23,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import android.app.TimePickerDialog
+import android.view.animation.AnimationUtils
 import android.widget.Switch
 import androidx.core.app.ActivityOptionsCompat
 
@@ -178,6 +179,12 @@ class MainActivity : AppCompatActivity() {
                         TIME_PICKER_START -> currentStartTime = hour to minute
                         TIME_PICKER_END -> currentEndTime = hour to minute
                     }
+
+                    dialogView.findViewById<TextView>(R.id.txt_time_error).apply {
+                        visibility = View.GONE
+                        clearAnimation()
+                    }
+
                     txtTimeRange.error = null
                     updateTimeDisplay(txtTimeRange, currentStartTime, currentEndTime)
                 },
@@ -193,6 +200,7 @@ class MainActivity : AppCompatActivity() {
         dialogView.findViewById<Button>(R.id.btn_set_end_time).setOnClickListener {
             showTimePicker(TIME_PICKER_END)
         }
+
 
         // ====== 5. SAVE HANDLER ======
         dialogView.findViewById<Button>(R.id.btn_ok).setOnClickListener {
@@ -235,9 +243,23 @@ class MainActivity : AppCompatActivity() {
                     currentEndTime!!.second
                 )
 
+                // validate the time range
                 if (!timeRange.isValid()) {
-                    txtTimeRange.error = "End time must be after start time"
-                    return@setOnClickListener
+                    val errorText = dialogView.findViewById<TextView>(R.id.txt_time_error)
+                    errorText.visibility = View.VISIBLE
+                    errorText.text = "ⓘ End time must be after start time"
+
+                    // shake animation
+                    val shake = AnimationUtils.loadAnimation(this@MainActivity, R.anim.shake)
+                    errorText.startAnimation(shake)
+
+                    return@setOnClickListener // Prevent dialog dismissal
+                } else {
+                    // Clear error and animation
+                    dialogView.findViewById<TextView>(R.id.txt_time_error).apply {
+                        visibility = View.GONE
+                        clearAnimation()
+                    }
                 }
 
                 storage.saveTimeRanges(app.packageName, listOf(timeRange))
