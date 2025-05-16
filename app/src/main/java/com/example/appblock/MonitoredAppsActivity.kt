@@ -42,6 +42,19 @@ class MonitoredAppsActivity : AppCompatActivity() {
     }
 
     private fun loadBlockedApps(recyclerView: RecyclerView) {
+        if (isFinishing) return // Don't update if activity is closing
+
+        val adapter = AppAdapter(mutableListOf(), storage, showRemove = true).apply {
+            onRemoveClick = { app ->
+                // Launch MainActivity to configure the app
+                startActivity(Intent(this@MonitoredAppsActivity, MainActivity::class.java).apply {
+                    putExtra("EDIT_APP", app.packageName)
+                })
+            }
+        }
+
+        recyclerView.adapter = adapter
+
         val pm = packageManager
         val blockedApps = storage.getBlockedApps()
         val apps = mutableListOf<AppInfo>()
@@ -88,7 +101,9 @@ class MonitoredAppsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        loadBlockedApps(findViewById(R.id.monitored_apps_list))
+        findViewById<RecyclerView>(R.id.monitored_apps_list)?.let {
+            loadBlockedApps(it) // Refresh when returning from config
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -15,7 +15,7 @@ class AppAdapter(var apps: MutableList<AppInfo>, private val storage: StorageHel
     var onRemoveClick: ((AppInfo) -> Unit)? = null
 
     fun updateList(newList: MutableList<AppInfo>) {
-        apps = newList.toMutableList()
+        apps = newList ?: mutableListOf() // Handle null input
         notifyDataSetChanged()
     }
 
@@ -39,7 +39,7 @@ class AppAdapter(var apps: MutableList<AppInfo>, private val storage: StorageHel
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val app = apps[position]
+        val app = apps.getOrNull(position) ?: return // Prevent IndexOutOfBounds
 
         // Basic bindings
         holder.appName.text = app.name

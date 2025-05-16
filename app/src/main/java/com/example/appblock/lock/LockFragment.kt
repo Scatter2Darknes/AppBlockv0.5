@@ -74,19 +74,21 @@ class LockFragment : Fragment() {
     private fun showPermissionNeededDialog() {
         try {
             Log.d("PERMISSION", "Attempting to show dialog")
-            MaterialAlertDialogBuilder(requireContext()).apply {
-                setTitle(R.string.permission_required_title)
-                setMessage(R.string.permission_rationale)
-                setPositiveButton(R.string.grant_access) { _, _ ->
-                    Log.d("PERMISSION", "User clicked grant access")
-                    openUsageSettings()
-                }
-                setNegativeButton(R.string.later) { _, _ ->
-                    Log.d("PERMISSION", "User deferred permission")
-                    binding.permissionStatus.visibility = View.VISIBLE
-                }
-                setCancelable(false)
-                show()
+            if(isAdded && !isDetached) {
+                MaterialAlertDialogBuilder(requireContext()).apply {
+                    setTitle(R.string.permission_required_title)
+                    setMessage(R.string.permission_rationale)
+                    setPositiveButton(R.string.grant_access) { _, _ ->
+                        Log.d("PERMISSION", "User clicked grant access")
+                        openUsageSettings()
+                    }
+                    setNegativeButton(R.string.later) { _, _ ->
+                        Log.d("PERMISSION", "User deferred permission")
+                        binding.permissionStatus.visibility = View.VISIBLE
+                    }
+                    setCancelable(false)
+                    show()
+                }.show()
             }
             Log.d("PERMISSION", "Dialog shown successfully")
         } catch (e: Exception) {
@@ -182,9 +184,16 @@ class LockFragment : Fragment() {
     }
 
     private fun openUsageSettings() {
-        startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        })
+        }
+
+        if (intent.resolveActivity(requireContext().packageManager) != null) {
+            startActivity(intent)
+        } else {
+            Log.e("PERMISSION", "No activity to handle settings intent")
+            // Show error message to user
+        }
     }
 
     private fun handlePermissionResult(isGranted: Boolean) {

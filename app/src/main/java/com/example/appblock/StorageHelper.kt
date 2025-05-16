@@ -25,6 +25,7 @@ class StorageHelper(context: Context) {
     }
 
     fun getTimeRanges(packageName: String): List<TimeRange> {
+        if (packageName.isBlank()) return emptyList() // Validate input
         val json = prefs.getString("TIME_$packageName", null) ?: return emptyList()
         val type = object : TypeToken<List<TimeRange>>() {}.type
         return gson.fromJson(json, type) ?: emptyList()
