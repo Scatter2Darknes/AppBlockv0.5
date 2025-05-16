@@ -5,11 +5,16 @@ plugins {
 }
 
 android {
+
+
     buildFeatures {
         viewBinding = true
+        compose = true
     }
     namespace = "com.example.appblock"
+
     compileSdk = 35
+    buildToolsVersion = "34.0.0"
 
     defaultConfig {
         applicationId = "com.example.appblock"
@@ -33,6 +38,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -68,4 +74,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.gson)
+
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.core.ktx.v1120)
+
+    // Add desugaring for Java 8+ API
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }

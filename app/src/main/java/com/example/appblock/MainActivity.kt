@@ -26,9 +26,14 @@ import android.app.TimePickerDialog
 import android.view.animation.AnimationUtils
 import android.widget.Switch
 import androidx.core.app.ActivityOptionsCompat
+import android.app.AppOpsManager
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var appLaunchDetector: AppLaunchDetector
     private lateinit var storage: StorageHelper
     private lateinit var adapter: AppAdapter // Make adapter a class property
     companion object {
@@ -36,14 +41,28 @@ class MainActivity : AppCompatActivity() {
         const val TIME_PICKER_END = 1
     }
 
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
 
-            // Initialize storage FIRST
-            storage = StorageHelper(applicationContext) // MOVED THIS LINE UP
+            // 1. Initialize storage FIRST
+            storage = StorageHelper(applicationContext)
 
+            // safe initialization
+            if (!::adapter.isInitialized) {
+                adapter = AppAdapter(mutableListOf(), storage)
+            }
+
+            // 2. Check Permissions BEFORE loading apps
+            if (!UsagePermissions.hasUsageAccess(this)){
+                showPermissionDialog()
+                return // Pause initialization until permission granted
+            }
+
+            // 3. Existing app list setup
             val apps = getInstalledApps().apply {
                 forEach { app ->
                     app.isBlocked = storage.getBlockedApps().contains(app.packageName)
@@ -58,8 +77,6 @@ class MainActivity : AppCompatActivity() {
             val recyclerView = findViewById<RecyclerView>(R.id.apps_recycler_view)
             recyclerView.layoutManager = LinearLayoutManager(this)
 
-//        val adapter = AppAdapter(getInstalledApps())
-//        recyclerView.adapter = adapter
 
             adapter = AppAdapter(apps,storage)
             recyclerView.adapter = adapter
@@ -71,10 +88,74 @@ class MainActivity : AppCompatActivity() {
 
             supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark) // Create this drawable
             handleEditDeepLink()
+
+            // 4. Start app detection AFTER UI setup
+            startAppDetection()
+
         } catch (e:Exception) {
             Log.e("CRASH", "MainActivity failed: ${e.stackTraceToString()}")
+            // Optional: Show error to user
+            AlertDialog.Builder(this)
+                .setTitle("Error")
+                .setMessage("Failed to initialize: ${e.message}")
+                .setPositiveButton("Exit") { _, _ -> finish() }
+                .show()
             finish()
         }
+    }
+
+
+
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    private fun startAppDetection() {
+        appLaunchDetector = AppLaunchDetector().apply {
+            onAppLaunched = { packageName ->
+                Log.d("APP_LAUNCH", "Detected launch: $packageName")
+            }
+        }
+        appLaunchDetector.startMonitoring(this)
+    }
+
+    // Add to handle permission grant on return
+    @SuppressLint("NotifyDataSetChanged")
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
+    override fun onResume() {
+        super.onResume()
+
+        if (!UsagePermissions.hasUsageAccess(this)) {
+            showPermissionDialog()
+            return // Exit early if no permission
+        }
+
+        // 1. Existing app list refresh
+        adapter.apps = getInstalledApps()
+        adapter.notifyDataSetChanged()
+
+        // 2. Permission handling logic
+        // 2. Permission handling
+        if (UsagePermissions.hasUsageAccess(this)) {
+            if (!::appLaunchDetector.isInitialized) {
+                startAppDetection()
+            } else {
+                // Safe restart for all API levels
+                appLaunchDetector.stopMonitoring()
+                appLaunchDetector.startMonitoring(this)
+            }
+        } else {
+            appLaunchDetector.stopMonitoring()
+            showPermissionDialog()
+        }
+    }
+
+    private fun showPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permission Required")
+            .setMessage("This app needs usage access to monitor app launches")
+            .setPositiveButton("Grant Access") { _, _ ->
+                UsagePermissions.requestUsageAccess(this)
+            }
+            .setNegativeButton("Cancel") { _, _ -> finish() }
+            .show()
     }
 
     private fun handleEditDeepLink() {
@@ -329,12 +410,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    override fun onResume() {
-        super.onResume()
-        // Refresh list when returning from background
-        adapter.apps = getInstalledApps()
-        adapter.notifyDataSetChanged()
-    }
+
 
     private fun getInstalledApps(): MutableList<AppInfo> {
         val pm = packageManager

@@ -6,12 +6,17 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import android.util.Log
 
 class StorageHelper(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("BLOCKED_APPS", Context.MODE_PRIVATE)
 
     private val gson = Gson()
+
+    init {
+        Log.d("STORAGE", "Initialized with package: ${context.packageName}")
+    }
 
     fun saveTimeRanges(packageName: String, ranges: List<TimeRange>) {
         prefs.edit {
