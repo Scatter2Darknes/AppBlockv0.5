@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     private fun startAppDetection() {
-        appLaunchDetector = AppLaunchDetector().apply {
+        appLaunchDetector = AppLaunchDetector(storage).apply { //pass storage instance
             onAppLaunched = { packageName ->
                 Log.d("APP_LAUNCH", "Detected launch: $packageName")
             }
