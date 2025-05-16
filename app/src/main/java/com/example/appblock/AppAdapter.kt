@@ -14,7 +14,7 @@ class AppAdapter(var apps: MutableList<AppInfo>, private val storage: StorageHel
     RecyclerView.Adapter<AppAdapter.ViewHolder>() {
     var onRemoveClick: ((AppInfo) -> Unit)? = null
 
-    fun updateList(newList: List<AppInfo>) {
+    fun updateList(newList: MutableList<AppInfo>) {
         apps = newList.toMutableList()
         notifyDataSetChanged()
     }

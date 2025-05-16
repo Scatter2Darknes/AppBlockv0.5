@@ -2,6 +2,7 @@ package com.example.appblock
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
@@ -16,18 +17,28 @@ class MonitoredAppsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monitored_apps)
-        storage = StorageHelper(applicationContext)
 
-        // Toolbar setup
-        setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.title = "Blocked Apps"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        try {
+            storage = StorageHelper(applicationContext)
+            val recyclerView = findViewById<RecyclerView>(R.id.monitored_apps_list)
+            recyclerView.layoutManager = LinearLayoutManager(this)
 
-        val recyclerView = findViewById<RecyclerView>(R.id.monitored_apps_list)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+            // Initialize with empty list first
+            recyclerView.adapter = AppAdapter(mutableListOf(), storage, showRemove = true)
 
-        loadBlockedApps(recyclerView)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark) // Create this drawable
+            // Toolbar setup
+            setSupportActionBar(findViewById(R.id.toolbar))
+            supportActionBar?.title = "Blocked Apps"
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+
+            loadBlockedApps(recyclerView)
+            supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark) // Create this drawable
+
+        } catch (e: Exception) {
+            Log.e("CRASH", "MonitoredApps failed: ${e.stackTraceToString()}")
+            finish()
+        }
     }
 
     private fun loadBlockedApps(recyclerView: RecyclerView) {
@@ -53,17 +64,9 @@ class MonitoredAppsActivity : AppCompatActivity() {
             }
         }
 
-        val adapter = AppAdapter(
-            apps.sortedBy { it.name }.toMutableList(),
-            storage,
-            showRemove = true
-        )
-
-        adapter.onRemoveClick = { app ->
-            launchEditScreenForApp(app)
+        (recyclerView.adapter as? AppAdapter)?.apply {
+            updateList(apps.sortedBy { it.name }.toMutableList())
         }
-
-        recyclerView.adapter = adapter
     }
 
     private fun launchEditScreenForApp(app: AppInfo) {

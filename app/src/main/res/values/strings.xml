@@ -10,4 +10,11 @@
         <item>Completed</item>
         <item>Incomplete</item>
     </string-array>
+<!--    Permissions stuff -->
+    <string name="permission_required_title">Permission Required</string>
+    <string name="permission_rationale">To manage app blocking, we need access to app usage statistics. This helps us monitor which apps are being opened.</string>
+    <string name="grant_access">Grant Access</string>
+    <string name="later">Not Now</string>
+    <string name="permission_needed">⚠️ Usage access permission required</string>
+
 </resources>

@@ -11,5 +11,6 @@
     <color name="toolbar_icons">#212121</color> <!-- Dark gray -->
     <color name="toolbar_background">#FFFFFF</color> <!-- White -->
     <color name="nav_selected">#4CAF50</color>       <!-- Green highlight -->
-    <color name="nav_unselected">#808080</color>     <!-- Gray default -->
+    <color name="nav_unselected">#808080</color>
+    <color name="red">#F44336</color>     <!-- Gray default -->
 </resources>

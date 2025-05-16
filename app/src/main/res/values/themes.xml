@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.AppBlock" parent="Theme.AppCompat.Light.NoActionBar"/>
-    <style name="ToolbarTheme" parent="ThemeOverlay.AppCompat.Light">
-        <item name="android:textColorPrimary">@color/toolbar_text</item>
-        <item name="colorControlNormal">@color/toolbar_icons</item>
+    <!-- Main app theme -->
+    <style name="Theme.AppBlock" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Material Components requirements -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+
+        <!-- existing transitions -->
         <item name="android:windowEnterAnimation">@transition/slide_right</item>
         <item name="android:windowExitAnimation">@transition/slide_left</item>
+    </style>
+
+    <!-- Toolbar theme -->
+    <style name="ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Light">
+        <item name="android:textColorPrimary">@color/toolbar_text</item>
+        <item name="colorControlNormal">@color/toolbar_icons</item>
     </style>
 </resources>

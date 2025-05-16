@@ -7,6 +7,16 @@
     android:gravity="center"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/permission_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/red"
+        android:visibility="gone"
+        android:textSize="16sp"
+        android:paddingBottom="16dp"/>
+
     <Button
         android:id="@+id/btn_app_list"
         android:layout_width="wrap_content"

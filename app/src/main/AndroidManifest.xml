@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppBlock"
         tools:targetApi="31">
+        <meta-data
+            android:name="android.allow_usage_access"
+            android:value="true" />
 
         <activity
             android:name=".DashboardActivity"
