@@ -1,9 +1,12 @@
 // File: AppLaunchDetector.kt
 package com.example.appblock
 
+import android.app.Activity
+import android.app.ActivityManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -12,7 +15,7 @@ import androidx.annotation.RequiresApi
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-class AppLaunchDetector(private val storage: StorageHelper) {
+class AppLaunchDetector(private val context: Context, private val storage: StorageHelper) {
     var onAppLaunched: ((String) -> Unit)? = null
     private lateinit var usageStatsManager: UsageStatsManager
     private val handler = Handler(Looper.getMainLooper())
@@ -73,20 +76,28 @@ class AppLaunchDetector(private val storage: StorageHelper) {
         if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
             val packageName = event.packageName
 
-            // 1. Check if app is blocked
             if (storage.getBlockedApps().contains(packageName)) {
-                // 2. Check time restrictions first
-                if (storage.isTimeRestrictionEnabled(packageName) && isDuringRestrictedTime(packageName)) {
-                    Log.d("APP_LOCK", "BLOCKED by time restrictions: $packageName")
-                }
-                // 3. Then check for delays
-                else if (storage.getBlockDelay(packageName) > 0) {
-                    Log.d("APP_LOCK", "Would delay ${storage.getBlockDelay(packageName)}s for $packageName")
+                val delay = storage.getBlockDelay(packageName)
+                if (delay > 0) {
+                    Log.d("APP_LOCK", "Starting delay for $packageName")
+
+                    try {
+                        val intent = Intent(context, BlockingOverlayService::class.java).apply {
+                            putExtra("packageName", packageName)
+                            putExtra("delaySeconds", delay.toLong())
+                        }
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            context.startForegroundService(intent)
+                        } else {
+                            context.startService(intent)
+                        }
+
+                    } catch (e: Exception) {
+                        Log.e("APP_LOCK", "Block failed: ${e.message}")
+                    }
                 }
             }
-
-            // Original detection logging
-            onAppLaunched?.invoke(packageName)
         }
     }
 

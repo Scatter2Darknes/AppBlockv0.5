@@ -31,6 +31,8 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import android.net.Uri
+import android.provider.Settings
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appLaunchDetector: AppLaunchDetector
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
             super.onCreate(savedInstanceState)
+            checkOverlayPermission()
             setContentView(R.layout.activity_main)
 
             // 1. Initialize storage FIRST
@@ -104,11 +107,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(this)) {
+            Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            ).also {
+                startActivity(it)
+            }
+        }
+    }
+
 
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     private fun startAppDetection() {
-        appLaunchDetector = AppLaunchDetector(storage).apply { //pass storage instance
+        appLaunchDetector = AppLaunchDetector(applicationContext,storage).apply { //pass storage instance
             onAppLaunched = { packageName ->
                 Log.d("APP_LAUNCH", "Detected launch: $packageName")
             }
