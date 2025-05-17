@@ -44,13 +44,15 @@ class SummaryActivity : AppCompatActivity() {
             val packageName = info.activityInfo.packageName
             if (ExcludedApps.isExcluded(packageName)) continue
 
-            apps.add(AppInfo(
-                name = info.loadLabel(pm).toString(),
-                packageName = packageName,
-                icon = info.loadIcon(pm),
-                isBlocked = false,  // Not used in summary
-                blockDelay = 0      // Not used in summary
-            ))
+            apps.add(
+                AppInfo(
+                    name = info.loadLabel(pm).toString(),
+                    packageName = packageName,
+                    icon = info.loadIcon(pm),
+                    isBlocked = false,  // Not used in summary
+                    blockDelay = 0      // Not used in summary
+                )
+            )
         }
 
         return apps.sortedBy { it.name }

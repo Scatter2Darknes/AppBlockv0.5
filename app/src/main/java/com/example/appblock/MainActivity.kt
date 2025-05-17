@@ -4,7 +4,6 @@ import TimeRange
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ResolveInfo
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,7 +15,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.content.SharedPreferences
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -26,8 +24,6 @@ import android.view.animation.AnimationUtils
 import android.widget.Switch
 import androidx.core.app.ActivityOptionsCompat
 import android.app.AppOpsManager
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -35,8 +31,6 @@ import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import android.Manifest
-import android.content.Context
-import androidx.core.app.NotificationManagerCompat
 import android.os.Process
 
 
@@ -48,6 +42,35 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val TIME_PICKER_START = 0
         const val TIME_PICKER_END = 1
+    }
+
+    private fun startBlockingService(packageName: String, delay: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Overlay permission required", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !isBackgroundStartAllowed()) {
+            Toast.makeText(this, "Background activity permission required", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val intent = Intent(this, BlockingOverlayService::class.java).apply {
+            putExtra("packageName", packageName)
+            putExtra("delaySeconds", delay.toLong())
+        }
+        startService(intent)
+    }
+
+    private fun isBackgroundStartAllowed(): Boolean {
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
+        return appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            packageName
+        ) == AppOpsManager.MODE_ALLOWED
     }
 
 
@@ -122,7 +145,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkEssentialPermissions(): Boolean {
         val hasUsage = run {
-            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
             appOps.checkOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
                 Process.myUid(),

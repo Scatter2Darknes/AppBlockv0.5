@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.appblock.databinding.ActivityDashboardBinding
-import com.example.appblock.lock.LockFragment
 import com.example.appblock.summary.SummaryFragment
 import com.example.appblock.tasks.TaskFragment
 

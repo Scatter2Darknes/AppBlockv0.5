@@ -40,4 +40,28 @@
         android:textColor="@color/white"
         android:backgroundTint="@color/purple_500"/>
 
+    <Button
+        android:id="@+id/btn_test_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TEST OVERLAY"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="@color/red"/>
+
+    <Button
+        android:id="@+id/btn_test_red"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TEST RED OVERLAY"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#FF0000"/>
+
+    <Button
+        android:id="@+id/btn_test_block"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TEST REAL BLOCK"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#4CAF50"/>
+
 </LinearLayout>

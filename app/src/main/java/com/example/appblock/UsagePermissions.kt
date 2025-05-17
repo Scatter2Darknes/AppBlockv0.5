@@ -4,6 +4,7 @@ package com.example.appblock
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.os.Process
 import android.provider.Settings
 
 object UsagePermissions {
@@ -11,7 +12,7 @@ object UsagePermissions {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
+            Process.myUid(),
             context.packageName
         )
         return mode == AppOpsManager.MODE_ALLOWED

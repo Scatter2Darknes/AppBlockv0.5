@@ -1,7 +1,6 @@
 // File: AppLaunchDetector.kt
 package com.example.appblock
 
-import android.app.Activity
 import android.app.ActivityManager
 import android.app.PendingIntent
 import android.app.usage.UsageEvents
@@ -13,9 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -27,8 +24,10 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
     var onAppLaunched: ((String) -> Unit)? = null
     private lateinit var usageStatsManager: UsageStatsManager
     private val handler = Handler(Looper.getMainLooper())
-    private val pollInterval = 5000L // 5 seconds instead of 1 to save battery
+//    private val pollInterval = 5000L // 5 seconds instead of 1 to save battery
+    private val pollInterval = 1000L
     private var isMonitoringManually = false
+    private var isMonitoring = false
 
     fun startMonitoring(context: Context) {
         usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE)
@@ -41,6 +40,46 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
         }
         isMonitoringManually = true
 
+    }
+
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val endTime = System.currentTimeMillis()
+            val startTime = endTime - pollInterval * 2 // Check 2 intervals back
+
+            val events = usageStatsManager.queryEvents(startTime, endTime)
+            val event = UsageEvents.Event()
+
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                    handleAppLaunch(event.packageName)
+                }
+            }
+
+            if (isMonitoring) {
+                handler.postDelayed(this, pollInterval)
+            }
+        }
+    }
+
+    private fun handleAppLaunch(packageName: String) {
+        if (storage.getBlockedApps().contains(packageName) && !ExcludedApps.isExcluded(packageName)) {
+            val delay = storage.getBlockDelay(packageName)
+            if (delay > 0) {
+                Log.d("BLOCK", "Launch detected: $packageName, delaying $delay seconds")
+                context.startService(Intent(context, BlockingOverlayService::class.java).apply {
+                    putExtra("packageName", packageName)
+                    putExtra("delaySeconds", delay.toLong())
+                })
+            }
+        }
+    }
+
+    fun stopMonitoring() {
+        isMonitoring = false
+        handler.removeCallbacks(pollRunnable)
     }
 
     private fun startModernMonitoring() {
@@ -181,11 +220,6 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
 
             currentTotal in startTotal..endTotal
         }
-    }
-
-    fun stopMonitoring() {
-        handler.removeCallbacksAndMessages(null)
-        isMonitoringManually = false
     }
 
 

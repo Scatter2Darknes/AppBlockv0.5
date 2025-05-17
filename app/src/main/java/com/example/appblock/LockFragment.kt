@@ -1,5 +1,6 @@
-package com.example.appblock.lock
+package com.example.appblock
 
+import android.Manifest
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
@@ -7,29 +8,23 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.view.WindowManager
 import android.widget.Toast
+import android.widget.Toast.LENGTH_LONG
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
-import com.example.appblock.MainActivity
-import com.example.appblock.MonitoredAppsActivity
-import com.example.appblock.R
-import com.example.appblock.databinding.FragmentLockBinding
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import android.Manifest
-import android.os.Process
-import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
-import com.example.appblock.NotificationHelper
-
+import androidx.fragment.app.Fragment
+import com.example.appblock.databinding.FragmentLockBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class LockFragment : Fragment() {
     private var _binding: FragmentLockBinding? = null
@@ -78,6 +73,68 @@ class LockFragment : Fragment() {
             .show()
     }
 
+    private fun testOverlay() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(requireContext())) {
+            Toast.makeText(requireContext(), "Enable overlay permission first", LENGTH_LONG).show()
+            return
+        }
+
+        val intent = Intent(requireContext(), BlockingOverlayService::class.java).apply {
+            putExtra("delaySeconds", 10L)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent)
+        } else {
+            requireContext().startService(intent)
+        }
+    }
+
+    private fun testOverlayManually() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(requireContext())) {
+            Toast.makeText(requireContext(), "Overlay permission needed", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(requireContext(), BlockingOverlayService::class.java).apply {
+            putExtra("packageName", "com.android.chrome") // Test with Chrome
+            putExtra("delaySeconds", 10L)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent)
+        } else {
+            requireContext().startService(intent)
+        }
+
+        Toast.makeText(requireContext(), "Testing overlay...", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun testOverlaySafely() {
+        try {
+            // 1. Direct permission check
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                !Settings.canDrawOverlays(requireContext())) {
+                Toast.makeText(requireContext(), "Overlay permission denied", LENGTH_LONG).show()
+                return
+            }
+
+            // 2. Start service directly
+            val intent = Intent(requireContext(), BlockingOverlayService::class.java)
+            requireContext().startService(intent)
+
+            // 3. Quick visual feedback
+            Toast.makeText(requireContext(), "Service started", Toast.LENGTH_SHORT).show()
+
+        } catch (e: SecurityException) {
+            Toast.makeText(requireContext(), "Security error: ${e.message}", LENGTH_LONG).show()
+        } catch (e: WindowManager.BadTokenException) {
+            Toast.makeText(requireContext(), "Window error: ${e.message}", LENGTH_LONG).show()
+        }
+    }
+
 
 
 
@@ -103,7 +160,42 @@ class LockFragment : Fragment() {
             startActivity(Intent(requireContext(), MonitoredAppsActivity::class.java))
         }
 
+        binding.btnTestRed.setOnClickListener {
+            testOverlay(showRed = true, blockTouches = false)
+        }
+
+        binding.btnTestBlock.setOnClickListener {
+            testOverlay(showRed = false, blockTouches = true)
+        }
+
         checkPermissions()
+        binding.btnTestOverlay.setOnClickListener {
+            testOverlayManually()
+        }
+    }
+
+    private fun testOverlay(showRed: Boolean, blockTouches: Boolean) {
+        try {
+            if (!hasOverlayPermission()) {
+                Toast.makeText(requireContext(), "Overlay permission needed", LENGTH_LONG).show()
+                return
+            }
+
+            val intent = Intent(requireContext(), BlockingOverlayService::class.java).apply {
+                putExtra("delaySeconds", 10L)
+                putExtra("showRed", showRed)
+                putExtra("blockTouches", blockTouches)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent)
+            } else {
+                requireContext().startService(intent)
+            }
+
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error: ${e.javaClass.simpleName}", LENGTH_LONG).show()
+        }
     }
 
     override fun onDestroyView() {
@@ -243,7 +335,7 @@ class LockFragment : Fragment() {
         Toast.makeText(
             requireContext(),
             "All permissions are required to use this app",
-            Toast.LENGTH_LONG
+            LENGTH_LONG
         ).show()
     }
 
