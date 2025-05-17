@@ -16,10 +16,13 @@ class DashboardActivity : AppCompatActivity() {
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        replaceFragment(LockFragment())
+        // Load LockFragment immediately using supportFragmentManager
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, LockFragment())
+            .commit() // Changed to regular commit
 
-        binding.bottomNavigation.setOnItemSelectedListener {
-            when (it.itemId) {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when(item.itemId) {
                 R.id.lock_menu -> replaceFragment(LockFragment())
                 R.id.summary_menu -> replaceFragment(SummaryFragment())
                 R.id.task_menu -> replaceFragment(TaskFragment())
@@ -30,7 +33,14 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.slide_in,
+                R.anim.fade_out,
+                R.anim.fade_in,
+                R.anim.slide_out
+            )
             .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null) // Add this line
             .commit()
     }
 }

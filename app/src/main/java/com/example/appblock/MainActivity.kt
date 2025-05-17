@@ -35,7 +35,10 @@ import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import android.Manifest
+import android.content.Context
 import androidx.core.app.NotificationManagerCompat
+import android.os.Process
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appLaunchDetector: AppLaunchDetector
@@ -52,11 +55,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
             super.onCreate(savedInstanceState)
-            requestNotificationPermission()
-            requestOverlayPermission()
-            checkOverlayPermission()
+
             setContentView(R.layout.activity_main)
 
+            if(!checkEssentialPermissions()) {
+                redirectToPermissionsSetup()
+                return // this exits onCreate early if permissions missing
+            }
+
+            // rest of initialization only happens if permissions are granted
             // 1. Initialize storage FIRST
             storage = StorageHelper(applicationContext)
 
@@ -113,6 +120,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkEssentialPermissions(): Boolean {
+        val hasUsage = run {
+            val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                packageName
+            ) == AppOpsManager.MODE_ALLOWED
+        }
+
+        val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else true
+
+        val hasNotifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        return hasUsage && hasOverlay && hasNotifications
+    }
+
+    private fun redirectToPermissionsSetup() {
+        startActivity(
+            Intent(this, DashboardActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        )
+        finish()
+    }
+
+
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
             if (ContextCompat.checkSelfPermission(
@@ -156,15 +194,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Add runtime overlay permission check
+    private fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else true
+    }
+
+    // Update permission requests
     private fun checkOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !Settings.canDrawOverlays(this)) {
+        if (!hasOverlayPermission()) {
             Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
-            ).also {
-                startActivity(it)
-            }
+            ).also { startActivity(it) }
         }
     }
 
@@ -187,8 +230,10 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         if (!UsagePermissions.hasUsageAccess(this)) {
-            showPermissionDialog()
-            return // Exit early if no permission
+            // Redirect to LockFragment or show dialog
+            startActivity(Intent(this, DashboardActivity::class.java))
+            finish()
+            return
         }
 
         // 1. Existing app list refresh
@@ -358,15 +403,18 @@ class MainActivity : AppCompatActivity() {
             app.isBlocked = isBlocked
 
             // Save delay configuration
+            // Update the delay input validation section
             val delay = if (delaySwitch.isChecked) {
                 try {
-                    delayInput.text.toString().toInt().coerceAtLeast(1)
+                    val input = delayInput.text.toString().toInt().coerceAtLeast(1)
+                    delayInput.error = null
+                    input
                 } catch (e: Exception) {
                     delayInput.error = getString(R.string.invalid_delay)
                     return@setOnClickListener
                 }
             } else {
-                0 // Clear delay when switch is off
+                0
             }
 
             // When saving delay in MainActivity's dialog

@@ -14,7 +14,9 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 
 class BlockingOverlayService : Service() {
@@ -78,18 +80,42 @@ class BlockingOverlayService : Service() {
                 WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED,
+                    or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply {
+            flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+
+            // For Android 10+ compatibility
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                alpha = 0.8f // Required for touch passthrough
+            }
             gravity = Gravity.TOP or Gravity.START
         }
 
         overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_blocking, null).apply {
-            setOnTouchListener { _, _ -> true } // Block all touches
+            findViewById<Button>(R.id.btn_panic).setOnClickListener {
+                stopSelf()
+                Toast.makeText(
+                    this@BlockingOverlayService,
+                    "Temporarily bypassed for 5 minutes",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
-
         windowManager.addView(overlayView, layoutParams)
     }
+
+//    // Fix 2: Add panic button handling
+//    private fun setupPanicButton() {
+//        overlayView.findViewById<Button>(R.id.btn_panic).setOnClickListener {
+//            stopSelf()
+//            Toast.makeText(this, "Temporarily bypassed for 5 minutes", Toast.LENGTH_LONG).show()
+//        }
+//    }
+
 
     private fun startCountdown(packageName: String) {
         Log.d("BLOCK_OVERLAY", "Starting countdown for $packageName: $remainingSeconds seconds")
@@ -111,6 +137,7 @@ class BlockingOverlayService : Service() {
     override fun onDestroy() {
         if (::countdownTimer.isInitialized) countdownTimer.cancel()
         if (::overlayView.isInitialized) windowManager.removeView(overlayView)
+        // do not auto-restart here - let system handle it
         super.onDestroy()
     }
 }

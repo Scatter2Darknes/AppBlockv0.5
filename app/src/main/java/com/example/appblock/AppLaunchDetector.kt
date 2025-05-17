@@ -27,7 +27,7 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
     var onAppLaunched: ((String) -> Unit)? = null
     private lateinit var usageStatsManager: UsageStatsManager
     private val handler = Handler(Looper.getMainLooper())
-    private val pollInterval = 1000L
+    private val pollInterval = 5000L // 5 seconds instead of 1 to save battery
     private var isMonitoringManually = false
 
     fun startMonitoring(context: Context) {
@@ -80,19 +80,34 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
         }
     }
 
+    // Add this function to check foreground status
+    private fun isAppInForeground(packageName: String): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val foregroundTask = activityManager.runningAppProcesses?.firstOrNull {
+            it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        }
+        return foregroundTask?.pkgList?.contains(packageName) ?: false
+    }
+
+    // Update handleEvent() with blocking logic
     private fun handleEvent(event: UsageEvents.Event) {
         if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
             val packageName = event.packageName
-            if (storage.getBlockedApps().contains(packageName)) {
+            if (isAppInForeground(packageName) && storage.getBlockedApps().contains(packageName)) {
                 val delay = storage.getBlockDelay(packageName)
                 if (delay > 0 && canShowOverlay()) {
-                    showBlockNotification(packageName, delay)
+                    // Start blocking overlay
+                    context.startService(
+                        Intent(context, BlockingOverlayService::class.java).apply {
+                            putExtra("packageName", packageName)
+                            putExtra("delaySeconds", delay.toLong())
+                        }
+                    )
                 }
             }
         }
     }
 
-    // AppLaunchDetector.kt
     private fun showBlockNotification(packageName: String, delay: Int) {
         val context = context ?: return
 

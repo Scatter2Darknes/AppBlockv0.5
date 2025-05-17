@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import android.graphics.Color
 
 object NotificationHelper {
     const val CHANNEL_ID = "blocking_overlay_channel"
@@ -23,19 +24,22 @@ object NotificationHelper {
             .build()
     }
 
-    private fun createNotificationChannel(context: Context) {
+    fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Blocking Notifications",
-                NotificationManager.IMPORTANCE_LOW
+                "App Block Alerts",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Shows when apps are being blocked"
+                description = "Shows app blocking status and alerts"
+                enableLights(true)
+                lightColor = Color.RED
+                enableVibration(true)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
 
-            context.getSystemService(NotificationManager::class.java)
-                ?.createNotificationChannel(channel)
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
         }
     }
 }

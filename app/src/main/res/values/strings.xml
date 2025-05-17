@@ -16,5 +16,6 @@
     <string name="grant_access">Grant Access</string>
     <string name="later">Not Now</string>
     <string name="permission_needed">⚠️ Usage access permission required</string>
-
+    <string name="permissions_required_warning">⚠️ All permissions are required to use app features</string>
+    <string name="default_notification_channel_id">blocking_alerts_channel</string>
 </resources>

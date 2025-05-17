@@ -5,7 +5,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/white"
+    android:focusableInTouchMode="true"
+    android:descendantFocusability="blocksDescendants">
 
     <TextView
         android:id="@+id/permission_status"
@@ -17,12 +20,15 @@
         android:textSize="16sp"
         android:paddingBottom="16dp"/>
 
+
     <Button
         android:id="@+id/btn_app_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Manage Blocked Apps"
-        android:textSize="18sp"/>
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/purple_500"/>
 
     <Button
         android:id="@+id/btn_monitored_apps"
@@ -30,6 +36,8 @@
         android:layout_height="wrap_content"
         android:text="View Blocked Apps"
         android:layout_marginTop="16dp"
-        android:textSize="18sp"/>
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/purple_500"/>
 
 </LinearLayout>
