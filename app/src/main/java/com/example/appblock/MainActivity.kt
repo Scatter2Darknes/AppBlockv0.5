@@ -16,7 +16,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-// In MainActivity.kt
 import android.content.SharedPreferences
 import android.view.View
 import android.widget.EditText
@@ -29,15 +28,20 @@ import androidx.core.app.ActivityOptionsCompat
 import android.app.AppOpsManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
+import android.Manifest
+import androidx.core.app.NotificationManagerCompat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var appLaunchDetector: AppLaunchDetector
     private lateinit var storage: StorageHelper
     private lateinit var adapter: AppAdapter // Make adapter a class property
+    private val REQUEST_NOTIFICATION_PERMISSION = 1001
     companion object {
         const val TIME_PICKER_START = 0
         const val TIME_PICKER_END = 1
@@ -48,6 +52,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
             super.onCreate(savedInstanceState)
+            requestNotificationPermission()
+            requestOverlayPermission()
             checkOverlayPermission()
             setContentView(R.layout.activity_main)
 
@@ -104,6 +110,49 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("Exit") { _, _ -> finish() }
                 .show()
             finish()
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_NOTIFICATION_PERMISSION
+                )
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQUEST_NOTIFICATION_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Notifications are required for app blocking", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun requestOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                ).also {
+                    startActivity(it)
+                }
+            }
         }
     }
 
@@ -319,7 +368,10 @@ class MainActivity : AppCompatActivity() {
             } else {
                 0 // Clear delay when switch is off
             }
+
+            // When saving delay in MainActivity's dialog
             storage.saveBlockDelay(app.packageName, delay)
+            Log.d("CONFIG", "Saved delay for ${app.packageName}: $delay seconds") // Add this
             app.blockDelay = delay
 
             // Save time configuration

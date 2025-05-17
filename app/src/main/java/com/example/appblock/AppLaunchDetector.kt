@@ -3,10 +3,12 @@ package com.example.appblock
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.PendingIntent
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -14,6 +16,12 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import android.provider.Settings
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import kotlin.random.Random
+import android.Manifest
 
 class AppLaunchDetector(private val context: Context, private val storage: StorageHelper) {
     var onAppLaunched: ((String) -> Unit)? = null
@@ -75,29 +83,75 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
     private fun handleEvent(event: UsageEvents.Event) {
         if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
             val packageName = event.packageName
-
             if (storage.getBlockedApps().contains(packageName)) {
                 val delay = storage.getBlockDelay(packageName)
-                if (delay > 0) {
-                    Log.d("APP_LOCK", "Starting delay for $packageName")
-
-                    try {
-                        val intent = Intent(context, BlockingOverlayService::class.java).apply {
-                            putExtra("packageName", packageName)
-                            putExtra("delaySeconds", delay.toLong())
-                        }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            context.startForegroundService(intent)
-                        } else {
-                            context.startService(intent)
-                        }
-
-                    } catch (e: Exception) {
-                        Log.e("APP_LOCK", "Block failed: ${e.message}")
-                    }
+                if (delay > 0 && canShowOverlay()) {
+                    showBlockNotification(packageName, delay)
                 }
             }
+        }
+    }
+
+    // AppLaunchDetector.kt
+    private fun showBlockNotification(packageName: String, delay: Int) {
+        val context = context ?: return
+
+        // Check notification permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                Log.e("NOTIFICATION", "Missing POST_NOTIFICATIONS permission")
+                return
+            }
+        }
+
+        try {
+            val notificationId = Random.nextInt()
+            val intent = Intent(context, BlockingOverlayService::class.java).apply {
+                putExtra("packageName", packageName)
+                putExtra("delaySeconds", delay.toLong())
+            }
+
+            val pendingIntent = PendingIntent.getService(
+                context,
+                notificationId,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            NotificationManagerCompat.from(context).notify(
+                notificationId,
+                NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
+                    .setContentTitle("App Block Triggered")
+                    .setContentText("Launching blocking overlay...")
+                    .setSmallIcon(R.drawable.ic_block)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .build()
+            )
+        } catch (e: SecurityException) {
+            Log.e("NOTIFICATION", "SecurityException: ${e.message}")
+            // Fallback: Directly start service if possible
+            try {
+                context.startService(Intent(context, BlockingOverlayService::class.java).apply {
+                    putExtra("packageName", packageName)
+                    putExtra("delaySeconds", delay.toLong())
+                })
+            } catch (e: Exception) {
+                Log.e("FALLBACK", "Failed to start service directly", e)
+            }
+        }
+    }
+
+    private fun canShowOverlay(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val hasPermission = Settings.canDrawOverlays(context)
+            Log.d("OVERLAY_PERM", "Overlay permission granted: $hasPermission")
+            hasPermission
+        } else {
+            Log.d("OVERLAY_PERM", "Pre-Marshmallow, no permission needed")
+            true
         }
     }
 
