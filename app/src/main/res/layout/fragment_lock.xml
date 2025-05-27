@@ -5,21 +5,24 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/white"
+    android:focusableInTouchMode="true"
+    android:descendantFocusability="blocksDescendants">
 
-    <!-- Shown when any permission is missing -->
+    <!-- Warn that all four permissions are required -->
     <TextView
         android:id="@+id/permission_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Grant all permissions to use app features."
-        android:textColor="@android:color/holo_red_dark"
+        android:textColor="@color/red"
+        android:text="AppBlock requires **four** permissions to function:\n• Usage Access\n• Display Over Other Apps\n• Notifications\n• Accessibility Service"
         android:textSize="16sp"
         android:paddingBottom="16dp"
         android:visibility="gone" />
 
-    <!-- Tapped to drive the next missing‐permission dialog -->
+    <!-- Triggers the cyclical permission-grant flow -->
     <Button
         android:id="@+id/btn_grant_permissions"
         android:layout_width="wrap_content"
@@ -27,24 +30,27 @@
         android:text="Grant Permissions"
         android:visibility="gone" />
 
-    <!-- Only visible once _all_ permissions are granted -->
+    <!-- Shown once all perms are in place -->
     <Button
         android:id="@+id/btn_app_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Manage Blocked Apps"
-        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textColor="@color/white"
         android:backgroundTint="@color/purple_500"
-        android:visibility="gone"
-        android:layout_marginTop="24dp"/>
+        android:layout_marginTop="24dp"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/btn_monitored_apps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="View Blocked Apps"
-        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textColor="@color/white"
         android:backgroundTint="@color/purple_500"
-        android:visibility="gone"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
 </LinearLayout>
