@@ -39,12 +39,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
+        // —————    PERMISSION GUARD REMOVED    —————
+        // We now trust LockFragment to gate entry, so MainActivity just always shows.
         // Centralized permissions check: If any permission missing, send to DashboardActivity (LockFragment host)
-        if (!areAllPermissionsGranted()) {
-            startActivity(Intent(this, DashboardActivity::class.java))
-            finish()
-            return
-        }
+
 
         // 1. Initialize storage first
         storage = StorageHelper(applicationContext)
@@ -72,23 +71,33 @@ class MainActivity : AppCompatActivity() {
 
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_arrow_back_dark)
         handleEditDeepLink()
-        startAppDetection()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            startAppDetection()
+        } else {
+            // optionally log or degrade gracefully
+            Log.w("MainActivity","App-detection feature requires API 22+")
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        // If permissions lost while app is in background, bounce user to permissions
-        if (!areAllPermissionsGranted()) {
-            startActivity(Intent(this, DashboardActivity::class.java))
-            finish()
-            return
-        }
+
+        // —————    PERMISSION GUARD REMOVED    —————
+        // We now trust LockFragment to gate entry, so MainActivity just always shows.
+        // Centralized permissions check: If any permission missing, send to DashboardActivity (LockFragment host)
+
+
         // Refresh app list
         adapter.apps = getInstalledApps()
         adapter.notifyDataSetChanged()
         // Restart app detector if needed
         if (!::appLaunchDetector.isInitialized) {
-            startAppDetection()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                startAppDetection()
+            } else {
+                // optionally log or degrade gracefully
+                Log.w("MainActivity","App-detection feature requires API 22+")
+            }
         } else {
             appLaunchDetector.stopMonitoring()
             appLaunchDetector.startMonitoring(this)

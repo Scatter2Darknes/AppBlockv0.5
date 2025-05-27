@@ -1,3 +1,4 @@
+// File: LockFragment.kt
 package com.example.appblock
 
 import android.Manifest
@@ -14,12 +15,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.example.appblock.databinding.FragmentLockBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -29,18 +27,18 @@ class LockFragment : Fragment() {
     private var _binding: FragmentLockBinding? = null
     private val binding get() = _binding!!
 
-    // Launchers for settings
-    private val requestUsageAccess = registerForActivityResult(
+    // ───── Launchers ─────────────────────────────────────
+    private val reqUsage = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { checkAndRequestPermissions() }
+    ) { updateUiForPermissions() }
 
-    private val requestOverlayPermission = registerForActivityResult(
+    private val reqOverlay = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { checkAndRequestPermissions() }
+    ) { updateUiForPermissions() }
 
-    private val requestNotificationPermission = registerForActivityResult(
+    private val reqNotification = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { checkAndRequestPermissions() }
+    ) { updateUiForPermissions() }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -51,51 +49,57 @@ class LockFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupFeatureButtons()
-        checkAndRequestPermissions()
+        setupButtonListeners()
+        updateUiForPermissions()
     }
 
     override fun onResume() {
         super.onResume()
-        // Small delay to allow Accessibility setting to register
-        binding.root.postDelayed({
-            checkAndRequestPermissions()
-        }, 300)
+        // give Settings a moment to take effect
+        binding.root.postDelayed({ updateUiForPermissions() }, 300)
     }
 
+    // ───── UI State ──────────────────────────────────────
+    private fun updateUiForPermissions() {
+        val all = hasUsage()
+                && hasOverlay()
+                && hasNotification()
+                && hasAccessibility()
 
-    // --- CENTRALIZED PERMISSION CHECK FLOW ---
-    private fun checkAndRequestPermissions() {
-        when {
-            !hasUsagePermission() -> {
-                showUsagePermissionDialog()
-                return
-            }
-            !hasOverlayPermission() -> {
-                showOverlayPermissionDialog()
-                return
-            }
-            !hasNotificationPermission() -> {
-                showNotificationPermissionDialog()
-                return
-            }
-            !hasAccessibilityPermission() -> {
-                showAccessibilityDialog()
-                return
-            }
-            else -> {
-                enableAppFeatures()
-            }
+        binding.permissionStatus.visibility    = if (all) View.GONE else View.VISIBLE
+        binding.btnGrantPermissions.visibility = if (all) View.GONE else View.VISIBLE
+        binding.btnAppList.visibility          = if (all) View.VISIBLE else View.GONE
+        binding.btnMonitoredApps.visibility    = if (all) View.VISIBLE else View.GONE
+    }
+
+    // ───── Button Hooks ─────────────────────────────────
+    private fun setupButtonListeners() {
+        binding.btnGrantPermissions.setOnClickListener {
+            promptNextPermission()
+        }
+        binding.btnAppList.setOnClickListener {
+            startActivity(Intent(requireContext(), MainActivity::class.java))
+        }
+        binding.btnMonitoredApps.setOnClickListener {
+            startActivity(Intent(requireContext(), MonitoredAppsActivity::class.java))
         }
     }
 
-    private fun hasAllCorePermissions(): Boolean =
-        hasUsagePermission() && hasOverlayPermission() && hasNotificationPermission() && hasAccessibilityPermission()
+    // ───── Drive the next missing permission ────────────
+    private fun promptNextPermission() {
+        when {
+            !hasUsage()         -> showUsageDialog()
+            !hasOverlay()       -> showOverlayDialog()
+            !hasNotification()  -> showNotificationDialog()
+            !hasAccessibility() -> showAccessibilityDialog()
+            else                -> { /* nothing left */ }
+        }
+    }
 
-    // --- INDIVIDUAL PERMISSION CHECKS ---
-    private fun hasUsagePermission(): Boolean {
-        val appOps = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
+    // ───── Individual Checks ────────────────────────────
+    private fun hasUsage(): Boolean {
+        val ops = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = ops.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
             Process.myUid(),
             requireContext().packageName
@@ -103,130 +107,77 @@ class LockFragment : Fragment() {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    private fun hasOverlayPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    private fun hasOverlay(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             Settings.canDrawOverlays(requireContext())
-        } else true
-    }
+        else true
 
-    private fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private fun hasNotification(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.POST_NOTIFICATIONS
+                requireContext(), Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-        } else true
-    }
+        else true
 
-    private fun hasAccessibilityPermission(): Boolean {
-        // You need the service name here!
-        val expectedComponent = "${requireContext().packageName}/.AppBlockAccessibilityService"
-        val enabledServices = Settings.Secure.getString(
+    private fun hasAccessibility(): Boolean {
+        val enabled = Settings.Secure.getString(
             requireContext().contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
-        return enabledServices.split(':').any { it.equals(expectedComponent, ignoreCase = true) }
+        val service = AppBlockAccessibilityService::class.java.name
+        val expected = "${requireContext().packageName}/$service"
+        Log.d("LockFragment", "Enabled services: $enabled")
+        Log.d("LockFragment", "Expecting       : $expected")
+        return enabled.split(':').any { it.equals(expected, true) }
     }
 
-    // --- PERMISSION DIALOGS ---
-    private fun showUsagePermissionDialog() {
+    // ───── Permission Dialogs ───────────────────────────
+    private fun showUsageDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("App Usage Access Required")
-            .setMessage("This app needs access to app usage data to monitor which apps you open.")
-            .setPositiveButton("Continue to Settings") { _, _ ->
-                requestUsageAccess.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            .setMessage("We need Usage Access to know which apps you open.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                reqUsage.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             }
-            .setNegativeButton("Exit") { _, _ -> blockAppAccess() }
             .setCancelable(false)
             .show()
     }
 
-    private fun showOverlayPermissionDialog() {
+    private fun showOverlayDialog() {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Display Over Other Apps Required")
-            .setMessage("To show blocking screens, please allow this app to display over others.")
-            .setPositiveButton("Continue to Settings") { _, _ ->
-                val intent = Intent(
+            .setTitle("Display Over Other Apps")
+            .setMessage("Allow overlay so we can show reminders/shame screens.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                val i = Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                     Uri.parse("package:${requireContext().packageName}")
                 )
-                requestOverlayPermission.launch(intent)
+                reqOverlay.launch(i)
             }
-            .setNegativeButton("Exit") { _, _ -> blockAppAccess() }
             .setCancelable(false)
             .show()
     }
 
-    private fun showNotificationPermissionDialog() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!hasNotificationPermission()) {
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Notifications Required")
-                    .setMessage("Notifications are needed to show blocking status updates.")
-                    .setPositiveButton("Grant") { _, _ ->
-                        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    .setNegativeButton("Exit") { _, _ -> blockAppAccess() }
-                    .setCancelable(false)
-                    .show()
+    private fun showNotificationDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Notifications Permission")
+            .setMessage("Enable notifications so we can remind/shame you.")
+            .setPositiveButton("Grant") { _, _ ->
+                reqNotification.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
-        }
+            .setCancelable(false)
+            .show()
     }
 
     private fun showAccessibilityDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Accessibility Service Required")
-            .setMessage("To enable real-time app blocking, you must enable the Accessibility Service for AppBlock. On the next screen, please find AppBlock and turn it on.")
-            .setPositiveButton("Open Accessibility Settings") { _, _ ->
+            .setMessage("Turn on our Accessibility Service for real-time blocking.")
+            .setPositiveButton("Open Settings") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
-            .setNegativeButton("Exit") { _, _ -> blockAppAccess() }
             .setCancelable(false)
             .show()
-    }
-
-    // --- ENABLE/DISABLE UI BASED ON PERMISSIONS ---
-    private fun enableAppFeatures() {
-        binding.permissionStatus.visibility = View.GONE
-        binding.btnAppList.isEnabled = true
-        binding.btnMonitoredApps.isEnabled = true
-    }
-
-    private fun blockAppAccess() {
-        binding.apply {
-            permissionStatus.text = "All permissions are required to use this app."
-            permissionStatus.visibility = View.VISIBLE
-            btnAppList.isEnabled = false
-            btnMonitoredApps.isEnabled = false
-        }
-        Toast.makeText(
-            requireContext(),
-            "All permissions are required to use this app",
-            Toast.LENGTH_LONG
-        ).show()
-    }
-
-
-    private fun setupFeatureButtons() {
-        binding.btnAppList.setOnClickListener {
-            if (hasAllCorePermissions()) {
-                startActivity(Intent(requireContext(), MainActivity::class.java))
-            } else {
-                Toast.makeText(requireContext(), "Grant all permissions to use this feature.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        binding.btnMonitoredApps.setOnClickListener {
-            if (hasAllCorePermissions()) {
-                startActivity(Intent(requireContext(), MonitoredAppsActivity::class.java))
-            } else {
-                Toast.makeText(requireContext(), "Grant all permissions to use this feature.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        binding.btnGrantPermissions.setOnClickListener {
-            checkAndRequestPermissions()
-        }
     }
 
     override fun onDestroyView() {

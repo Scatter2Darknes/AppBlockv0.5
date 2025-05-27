@@ -25,12 +25,12 @@ class AppLaunchDetector(private val context: Context, private val storage: Stora
     var onAppLaunched: ((String) -> Unit)? = null
     private lateinit var usageStatsManager: UsageStatsManager
     private val handler = Handler(Looper.getMainLooper())
-    private val pollInterval = 500L // 0.5 seconds
+    private val pollInterval = 1000L // 1 seconds
     private var isMonitoringManually = false
     private var isMonitoring = false
     private val lastLaunchTimestamps = mutableMapOf<String, Long>()
     private val lastNotificationTimes = mutableMapOf<String, Long>()
-    private val notificationCooldown = 1000L // 3 seconds, adjust as desired
+    private val notificationCooldown = 2000L // 2 seconds, adjust as desired
 
     fun startMonitoring(context: Context) {
         usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager

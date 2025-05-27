@@ -1,8 +1,8 @@
+// File: DashboardActivity.kt
 package com.example.appblock
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
 import com.example.appblock.databinding.ActivityDashboardBinding
 import com.example.appblock.summary.SummaryFragment
 import com.example.appblock.tasks.TaskFragment
@@ -15,17 +15,11 @@ class DashboardActivity : AppCompatActivity() {
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Always show LockFragment at startup (can be replaced with navigation host if needed)
         if (savedInstanceState == null) {
-            showLockFragment()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, LockFragment())
+                .commit()
         }
-    }
-
-    // Optionally, add navigation for other features/fragments here
-    private fun showLockFragment() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, LockFragment())
-            .commit()
     }
 
     fun showSummaryFragment() {
@@ -41,6 +35,4 @@ class DashboardActivity : AppCompatActivity() {
             .addToBackStack(null)
             .commit()
     }
-
-    // ...add navigation methods for other fragments as needed
 }

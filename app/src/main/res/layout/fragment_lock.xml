@@ -5,65 +5,46 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="16dp"
-    android:background="@color/white"
-    android:focusableInTouchMode="true"
-    android:descendantFocusability="blocksDescendants">
+    android:padding="16dp">
 
+    <!-- Shown when any permission is missing -->
     <TextView
         android:id="@+id/permission_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:textColor="@color/red"
-        android:visibility="gone"
+        android:text="Grant all permissions to use app features."
+        android:textColor="@android:color/holo_red_dark"
         android:textSize="16sp"
-        android:paddingBottom="16dp"/>
+        android:paddingBottom="16dp"
+        android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/accessibility_prompt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="To enable real-time app blocking, please enable Accessibility Service for AppBlock:"
-        android:textAppearance="?attr/textAppearanceBody1"
-        android:paddingBottom="8dp" />
-
+    <!-- Tapped to drive the next missing‐permission dialog -->
     <Button
         android:id="@+id/btn_grant_permissions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Grant Permissions" />
+        android:text="Grant Permissions"
+        android:visibility="gone" />
 
-
-    <TextView
-        android:id="@+id/accessibility_explanation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="AppBlock uses Android's Accessibility Service to detect and block apps in real time. No personal data is collected or transmitted. Please enable this service for effective blocking."
-        android:textAppearance="?attr/textAppearanceBody2"
-        android:paddingBottom="8dp"
-        android:paddingTop="8dp"
-        android:importantForAccessibility="yes" />
-
-
+    <!-- Only visible once _all_ permissions are granted -->
     <Button
         android:id="@+id/btn_app_list"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Manage Blocked Apps"
-        android:textSize="18sp"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/purple_500"/>
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/purple_500"
+        android:visibility="gone"
+        android:layout_marginTop="24dp"/>
 
     <Button
         android:id="@+id/btn_monitored_apps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="View Blocked Apps"
-        android:layout_marginTop="16dp"
-        android:textSize="18sp"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/purple_500"/>
-
-
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/purple_500"
+        android:visibility="gone"
+        android:layout_marginTop="16dp"/>
 </LinearLayout>
