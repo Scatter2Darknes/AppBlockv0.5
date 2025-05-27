@@ -1,3 +1,6 @@
+package com.example.appblock
+
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -22,14 +25,29 @@ class BlockingOverlayService : Service() {
     private lateinit var windowManager: WindowManager
     private var overlayView: View? = null
     private var countdownTimer: CountDownTimer? = null
+    private val FOREGROUND_SERVICE_TYPE_SYSTEM_ALERT_WINDOW = 0x00000020
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    @SuppressLint("ForegroundServiceType","WrongConstant")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return try {
+            android.widget.Toast.makeText(this, "BlockingOverlayService started!", android.widget.Toast.LENGTH_SHORT).show()
+            Log.d("OVERLAY", "BlockingOverlayService started with intent: $intent")
             // 1. Create notification FIRST
             createNotificationChannel()
-            startForeground(1, createNotification())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // 0x00000020 is the value for FOREGROUND_SERVICE_TYPE_SYSTEM_ALERT_WINDOW
+                startForeground(
+                    1,
+                    createNotification(),
+                    FOREGROUND_SERVICE_TYPE_SYSTEM_ALERT_WINDOW
+                )
+            } else {
+                startForeground(1, createNotification())
+            }
+
+
 
             // 2. Ensure overlay permission
             if (!canDrawOverlays()) {
@@ -58,7 +76,12 @@ class BlockingOverlayService : Service() {
 
     private fun setupOverlay(intent: Intent?) {
         try {
+            Log.d("OVERLAY", "setupOverlay: Entered")
+            android.widget.Toast.makeText(this, "setupOverlay Entered", android.widget.Toast.LENGTH_SHORT).show()
+
+            Log.d("OVERLAY", "setupOverlay: Before windowManager init")
             windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+            Log.d("OVERLAY", "setupOverlay: After windowManager init")
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -75,41 +98,47 @@ class BlockingOverlayService : Service() {
                 gravity = Gravity.TOP or Gravity.START
             }
 
-            // For visual debugging - bright red background
-            overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_blocking, null).apply {
-                setBackgroundColor(Color.argb(200, 255, 0, 0)) // Semi-transparent red
-                findViewById<TextView>(R.id.txt_countdown).apply {
-                    text = "BLOCKING OVERLAY ACTIVE"
-                    setTextColor(Color.WHITE)
-                    textSize = 24f
-                }
-                setOnSystemUiVisibilityChangeListener { visibility ->
-                    // Keep overlay on top
-                    systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
-                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_blocking, null)
+            Log.d("OVERLAY", "setupOverlay: About to add overlayView")
+            windowManager.addView(overlayView, params)
+            Log.d("OVERLAY", "setupOverlay: overlayView added")
+            android.widget.Toast.makeText(this, "Overlay added!", android.widget.Toast.LENGTH_SHORT).show()
+
+            val textView = overlayView?.findViewById<TextView>(R.id.txt_countdown)
+            val isTimeRestricted = intent?.getBooleanExtra("timeRestricted", false) ?: false
+
+            if (isTimeRestricted) {
+                // HARD-LOCK: Show hard lock message
+                textView?.text = "This app is blocked right now.\nPlease try again later."
+            } else {
+                // SOFT-LOCK: Show countdown
+                val delay = intent?.getLongExtra("delaySeconds", 0L) ?: 0L
+                if (delay > 0) {
+                    startCountdown(delay * 1000)
+                } else {
+                    textView?.text = "This app is currently delayed."
                 }
             }
 
-            windowManager.addView(overlayView, params)
-            Log.d("OVERLAY", "Overlay view added successfully")
-
-            // Start countdown if needed
-            intent?.getLongExtra("delaySeconds", 0L)?.let { delay ->
-                startCountdown(delay * 1000)
+            // OPTIONAL: Dismiss on tap for debugging or until you implement strict locking
+            overlayView?.setOnClickListener {
+                stopSelf()
             }
 
         } catch (e: Exception) {
             Log.e("OVERLAY", "Failed to create overlay", e)
+            android.widget.Toast.makeText(this, "Overlay ERROR: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
             stopSelf()
         }
     }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "BLOCKING_CHANNEL",
                 "Blocking Notifications",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -144,9 +173,11 @@ class BlockingOverlayService : Service() {
         try {
             countdownTimer?.cancel()
             overlayView?.let { windowManager.removeView(it) }
+            stopForeground(true)
         } catch (e: Exception) {
             Log.e("CLEANUP_ERROR", "Error cleaning up", e)
         }
         super.onDestroy()
     }
+
 }

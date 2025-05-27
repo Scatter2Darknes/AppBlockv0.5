@@ -82,9 +82,18 @@ class MainActivity : AppCompatActivity() {
             setContentView(R.layout.activity_main)
 
             if(!checkEssentialPermissions()) {
-                redirectToPermissionsSetup()
-                return // this exits onCreate early if permissions missing
+                // If missing notification permission and on Android 13+, request it directly
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestNotificationPermission()
+                    // You may wish to return here to wait for the user response, or let the rest proceed if non-critical
+                } else {
+                    // For usage or overlay permission missing, redirect
+                    redirectToPermissionsSetup()
+                    return
+                }
             }
+
 
             // rest of initialization only happens if permissions are granted
             // 1. Initialize storage FIRST

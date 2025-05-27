@@ -25,6 +25,8 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import com.example.appblock.databinding.FragmentLockBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.Button
+import android.widget.TextView
 
 class LockFragment : Fragment() {
     private var _binding: FragmentLockBinding? = null
@@ -72,6 +74,34 @@ class LockFragment : Fragment() {
             .setNegativeButton("Cancel") { _, _ -> checkPermissions() }
             .show()
     }
+
+    override fun onResume() {
+        super.onResume()
+
+        val btnAccessibility = view?.findViewById<Button>(R.id.btn_enable_accessibility)
+        val txtExplanation = view?.findViewById<TextView>(R.id.accessibility_explanation)
+
+        val enabled = isAccessibilityServiceEnabled(requireContext())
+        btnAccessibility?.isEnabled = !enabled
+
+        if (enabled) {
+            txtExplanation?.text = "Accessibility Service is enabled. AppBlock can now block apps in real time."
+        } else {
+            txtExplanation?.text = "AppBlock uses Android's Accessibility Service to detect and block apps in real time. No personal data is collected or transmitted. Please enable this service for effective blocking."
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(context: Context): Boolean {
+        val expectedComponent = "${context.packageName}/.AppBlockAccessibilityService"
+        val enabledServices = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+
+        return enabledServices.split(':').any { it.equals(expectedComponent, ignoreCase = true) }
+    }
+
+
 
     private fun testOverlay() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
@@ -160,17 +190,11 @@ class LockFragment : Fragment() {
             startActivity(Intent(requireContext(), MonitoredAppsActivity::class.java))
         }
 
-        binding.btnTestRed.setOnClickListener {
-            testOverlay(showRed = true, blockTouches = false)
-        }
-
-        binding.btnTestBlock.setOnClickListener {
-            testOverlay(showRed = false, blockTouches = true)
-        }
-
-        checkPermissions()
-        binding.btnTestOverlay.setOnClickListener {
-            testOverlayManually()
+        val btnAccessibility = view.findViewById<Button>(R.id.btn_enable_accessibility)
+        btnAccessibility.setOnClickListener {
+            // Open the Accessibility Settings
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
         }
     }
 
