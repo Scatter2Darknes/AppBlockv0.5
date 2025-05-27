@@ -1,13 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
+    <!-- Permissions required for app-blocking and overlays -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
         <intent>
@@ -28,14 +28,7 @@
         android:theme="@style/Theme.AppBlock"
         tools:targetApi="31">
 
-        <meta-data
-            android:name="android.allow_usage_access"
-            android:value="true" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="@string/default_notification_channel_id" />
-
-        <!-- Activities -->
+        <!-- Launcher Activity -->
         <activity
             android:name=".DashboardActivity"
             android:exported="true">
@@ -45,6 +38,7 @@
             </intent-filter>
         </activity>
 
+        <!-- Other activities (not exported, internal navigation only) -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
@@ -56,18 +50,18 @@
             android:exported="false"
             android:theme="@style/Theme.AppBlock" />
 
-        <!-- Services -->
+        <activity
+            android:name=".AppListActivity"
+            android:exported="false" />
+
+        <!-- Foreground overlay service -->
         <service
             android:name=".BlockingOverlayService"
             android:enabled="true"
             android:exported="false"
-            android:permission="android.permission.FOREGROUND_SERVICE">
+            android:permission="android.permission.FOREGROUND_SERVICE" />
 
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
+        <!-- Accessibility Service for blocking -->
         <service
             android:name=".AppBlockAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -80,15 +74,10 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-
-        <!-- Other components -->
-        <!-- <activity android:name=".BlockedAppsManager" android:exported="false"
-            tools:ignore="Instantiatable" /> -->
-        <activity android:name=".AppListActivity" android:exported="false" />
-        <activity android:name=".AppAdapter" android:exported="false"
-            tools:ignore="Instantiatable" />
-        <activity android:name=".ExcludedApps" android:exported="false"
-            tools:ignore="Instantiatable" />
+        <!-- Firebase Notification Channel, if you use Firebase (optional, safe to leave) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
 
     </application>
 </manifest>

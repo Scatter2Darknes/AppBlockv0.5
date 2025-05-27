@@ -29,10 +29,11 @@
         android:paddingBottom="8dp" />
 
     <Button
-        android:id="@+id/btn_enable_accessibility"
+        android:id="@+id/btn_grant_permissions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enable Accessibility Service" />
+        android:text="Grant Permissions" />
+
 
     <TextView
         android:id="@+id/accessibility_explanation"

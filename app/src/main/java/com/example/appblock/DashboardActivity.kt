@@ -15,31 +15,32 @@ class DashboardActivity : AppCompatActivity() {
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Load LockFragment immediately using supportFragmentManager
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, LockFragment())
-            .commit() // Changed to regular commit
-
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when(item.itemId) {
-                R.id.lock_menu -> replaceFragment(LockFragment())
-                R.id.summary_menu -> replaceFragment(SummaryFragment())
-                R.id.task_menu -> replaceFragment(TaskFragment())
-            }
-            true
+        // Always show LockFragment at startup (can be replaced with navigation host if needed)
+        if (savedInstanceState == null) {
+            showLockFragment()
         }
     }
 
-    private fun replaceFragment(fragment: Fragment) {
+    // Optionally, add navigation for other features/fragments here
+    private fun showLockFragment() {
         supportFragmentManager.beginTransaction()
-            .setCustomAnimations(
-                R.anim.slide_in,
-                R.anim.fade_out,
-                R.anim.fade_in,
-                R.anim.slide_out
-            )
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack(null) // Add this line
+            .replace(R.id.fragment_container, LockFragment())
             .commit()
     }
+
+    fun showSummaryFragment() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, SummaryFragment())
+            .addToBackStack(null)
+            .commit()
+    }
+
+    fun showTasksFragment() {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, TaskFragment())
+            .addToBackStack(null)
+            .commit()
+    }
+
+    // ...add navigation methods for other fragments as needed
 }
