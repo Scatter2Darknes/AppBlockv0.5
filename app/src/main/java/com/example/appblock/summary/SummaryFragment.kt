@@ -1,7 +1,7 @@
 package com.example.appblock.summary
 
 import com.example.appblock.R
-import android.app.usage.UsageStats
+//import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -14,9 +14,12 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.LinearLayout
-import android.widget.ImageView
-import android.widget.TextView
+//import android.widget.LinearLayout
+//import android.widget.ImageView
+//import android.widget.TextView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
+import android.widget.AdapterView
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -24,6 +27,7 @@ class SummaryFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: AppUsageAdapter
+    private lateinit var timePeriodSpinner: Spinner
     private val appUsageList = mutableListOf<AppUsageInfo>()
 
     override fun onCreateView(
@@ -37,12 +41,28 @@ class SummaryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        timePeriodSpinner = view.findViewById(R.id.spinnerTimePeriod)
         recyclerView = view.findViewById(R.id.recyclerViewAppUsage)
         adapter = AppUsageAdapter(appUsageList)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
 
+        setupTimePeriodSpinner()
         checkUsageStatsPermission()
+    }
+
+    private fun setupTimePeriodSpinner() {
+        val timePeriods = arrayOf("Daily", "Weekly", "Monthly")
+        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, timePeriods)
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        timePeriodSpinner.adapter = spinnerAdapter
+
+        timePeriodSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                loadAppUsageData()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 
     private fun checkUsageStatsPermission() {
@@ -67,20 +87,52 @@ class SummaryFragment : Fragment() {
         }
     }
 
+    private fun getTimeRange(position: Int): Pair<Long, Long> {
+        val calendar = Calendar.getInstance()
+        val endTime = calendar.timeInMillis
+
+        when (position) {
+            0 -> { // Daily
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+            }
+            1 -> { // Weekly
+                calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+            }
+            2 -> { // Monthly
+                calendar.set(Calendar.DAY_OF_MONTH, 1)
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+            }
+        }
+
+        return Pair(calendar.timeInMillis, endTime)
+    }
+
     private fun loadAppUsageData() {
         val usageStatsManager = requireContext().getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val packageManager = requireContext().packageManager
 
-        val calendar = Calendar.getInstance()
-        val endTime = calendar.timeInMillis
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val startTime = calendar.timeInMillis
+        val selectedPosition = timePeriodSpinner.selectedItemPosition
+        val (startTime, endTime) = getTimeRange(selectedPosition)
+
+        val interval = when (selectedPosition) {
+            0 -> UsageStatsManager.INTERVAL_DAILY
+            1 -> UsageStatsManager.INTERVAL_WEEKLY
+            2 -> UsageStatsManager.INTERVAL_MONTHLY
+            else -> UsageStatsManager.INTERVAL_DAILY
+        }
 
         val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
+            interval,
             startTime,
             endTime
         )

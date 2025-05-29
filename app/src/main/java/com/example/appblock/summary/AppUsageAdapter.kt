@@ -1,4 +1,5 @@
 package com.example.appblock.summary
+
 import com.example.appblock.R
 import android.view.LayoutInflater
 import android.view.View
