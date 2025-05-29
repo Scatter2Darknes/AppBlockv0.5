@@ -16,11 +16,13 @@ import com.google.gson.reflect.TypeToken
 import android.util.Log
 
 
+
+
 class TaskFragment : Fragment() {
+    private var currentlyShowingCompleted = false
     private lateinit var adapter: ArrayAdapter<Task>
     private val taskList = mutableListOf<Task>()
     private val filteredList = mutableListOf<Task>()
-    private lateinit var spinner: Spinner
     private lateinit var listView: ListView
 
     override fun onCreateView(
@@ -31,7 +33,6 @@ class TaskFragment : Fragment() {
 
         listView = view.findViewById(R.id.task_list)
         val addButton = view.findViewById<Button>(R.id.add_task_button)
-        spinner = view.findViewById(R.id.task_filter_spinner)
 
         adapter = object : ArrayAdapter<Task>(requireContext(), R.layout.task_list_item, filteredList) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -52,7 +53,31 @@ class TaskFragment : Fragment() {
                     checkBox.visibility = View.VISIBLE
                     checkBox.isChecked = false
                     dueView.visibility = View.VISIBLE
-                    dueView.text = "Due: ${task.dueDate}"
+
+                    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                    val now = Date()
+                    val dueDate = try { sdf.parse(task.dueDate) } catch (e: Exception) { null }
+
+                    if (dueDate != null && dueDate.before(now)) {
+                        dueView.text = "Overdue: ${task.dueDate}"
+                        dueView.setTextColor(Color.RED)
+                    } else {
+
+                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                        val now = Date()
+                        val dueDateParsed = try { sdf.parse(task.dueDate) } catch (e: Exception) { null }
+
+                        if (dueDateParsed != null && dueDateParsed.before(now)) {
+                            dueView.text = "Overdue: ${task.dueDate}"
+                            dueView.setTextColor(Color.RED)
+                        } else {
+                            dueView.text = "Due: ${task.dueDate}"
+                            dueView.setTextColor(Color.BLACK)
+                        }
+
+                        dueView.setTextColor(Color.BLACK)
+                    }
+
 
                     checkBox.setOnCheckedChangeListener { _, isChecked ->
                         if (isChecked) {
@@ -68,6 +93,17 @@ class TaskFragment : Fragment() {
         }
 
         listView.adapter = adapter
+
+        val buttonIncomplete = view.findViewById<Button>(R.id.button_incomplete)
+        val buttonComplete = view.findViewById<Button>(R.id.button_complete)
+
+        buttonIncomplete.setOnClickListener {
+            filterTasks(showCompleted = false)
+        }
+
+        buttonComplete.setOnClickListener {
+            filterTasks(showCompleted = true)
+        }
 
         val prefs = requireContext().getSharedPreferences("tasks", Context.MODE_PRIVATE)
         val json = prefs.getString("task_list", "[]")
@@ -89,25 +125,13 @@ class TaskFragment : Fragment() {
             }
         }
 
-        val options = listOf("Incomplete", "Completed")
-        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, options)
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = spinnerAdapter
-
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                filterTasks()
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-
         filterTasks()
         return view
     }
 
-    private fun filterTasks() {
-        val selected = spinner.selectedItem.toString()
+    private fun filterTasks(showCompleted: Boolean = false) {
+        currentlyShowingCompleted = showCompleted
+        val selected = if (showCompleted) "Completed" else "Incomplete"
         filteredList.clear()
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         val sorted = taskList.sortedWith(compareBy<Task> { !it.completed }.thenBy {
@@ -180,7 +204,8 @@ class TaskFragment : Fragment() {
                     taskList.add(newTask)
                 }
                 saveTasks()
-                filterTasks()
+                filterTasks(currentlyShowingCompleted)
+                //scheduleNotification(newTask)
                 dialog.dismiss()
             }
         }
@@ -198,7 +223,13 @@ class TaskFragment : Fragment() {
     }
 
     private fun showCompletedDialog(task: Task, index: Int) {
-        val message = "Description: ${task.description}\nCompleted on: ${task.dueDate}"
+
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val now = Date()
+        val completedDate = try { sdf.parse(task.dueDate) } catch (e: Exception) { null }
+        val overdueTag = if (completedDate != null && completedDate.before(now)) "" else ""
+        val message = "Description: ${task.description}\nDue: ${task.dueDate}\nCompleted on: ${task.dueDate}$overdueTag"
+
         AlertDialog.Builder(requireContext())
             .setTitle(task.name)
             .setMessage(message)
@@ -206,7 +237,7 @@ class TaskFragment : Fragment() {
             .setNegativeButton("Delete") { _, _ ->
                 taskList.removeAt(index)
                 saveTasks()
-                filterTasks()
+                filterTasks(showCompleted = true)
             }
             .show()
     }
@@ -222,7 +253,31 @@ class TaskFragment : Fragment() {
 
         titleView.text = task.name
         descView.text = task.description
-        dueView.text = "Due: ${task.dueDate}"
+
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val now = Date()
+        val dueDate = try { sdf.parse(task.dueDate) } catch (e: Exception) { null }
+
+        if (dueDate != null && dueDate.before(now)) {
+            dueView.text = "Overdue: ${task.dueDate}"
+            dueView.setTextColor(Color.RED)
+        } else {
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val now = Date()
+            val dueDateParsed = try { sdf.parse(task.dueDate) } catch (e: Exception) { null }
+
+            if (dueDateParsed != null && dueDateParsed.before(now)) {
+                dueView.text = "Overdue: ${task.dueDate}"
+                dueView.setTextColor(Color.RED)
+            } else {
+                dueView.text = "Due: ${task.dueDate}"
+                dueView.setTextColor(Color.BLACK)
+            }
+
+            dueView.setTextColor(Color.BLACK)
+        }
+
 
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
@@ -257,3 +312,24 @@ class TaskFragment : Fragment() {
         prefs.edit().putString("task_list", json).apply()
     }
 }
+
+/*private fun scheduleNotification(task: Task) {
+    try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val dueDate = sdf.parse(task.dueDate) ?: return
+        val alarmManager = requireContext().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(requireContext(), TaskDueReceiver::class.java).apply {
+            putExtra("task_name", task.name)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            requireContext(),
+            task.name.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, dueDate.time, pendingIntent)
+    } catch (e: Exception) {
+        Log.e("Alarm", "Failed to schedule alarm: ${e.message}")
+    }
+}
+*/

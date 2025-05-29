@@ -5,7 +5,7 @@
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
 - [Features](#features)  
 - [Demo](#demo)  
@@ -13,35 +13,56 @@
   - [Prerequisites](#prerequisites)  
   - [Installation](#installation)  
 - [Usage](#usage)  
-  - [Granting Permissions](#granting-permissions)  
-  - [Blocking Modes](#blocking-modes)  
-  - [Summary & Tasks](#summary--tasks)  
+  - [Granting Permissions](#granting-permissions)
+  - [Manage Your Blocked Apps](#manage-your-blocked-apps)
+  - [Usage Summary](#usage-summary)
+  - [Manage Tasks](#manage-tasks)
 - [Configuration](#configuration)  
 - [Project Structure](#project-structure)  
-- [License](#license)  
-- [Contact](#contact)  
+- [License](#license)
+
+</details>
+
 
 ---
 
-## Features
+## ✨ Features
 
-- **Real-time App Detection** via Accessibility Service  
-- **Soft-lock** with customizable delay and shame notifications  
-- **Time-based Locks**: set “do not disturb” windows per app  
-- **Persistent Notifications** and redirections  
-- **Usage Summary** for self-reflection
-- **Tasks** to keep being productive
+- **Accessibility-powered Real-time App Detection**  
+  Leverages Android’s Accessibility Service to monitor which app is foregrounded—**all on-device**, no personal data leaves your device.
+
+- **Soft-lock (Delay & Shame)**  
+  Configure a per-app delay (e.g. 10 s) before launch, with a countdown notification and optional “shame” overlay if you press ahead.
+
+- **Time-based Locks**  
+  Define “do-not-disturb” windows per app (e.g. social media blocked 09:00 – 17:00).
+
+- **Persistent & Priority Notifications**  
+  Ongoing reminders appear in your notification shade, powered by the **POST_NOTIFICATIONS** permission.
+
+- **Usage Summary**  
+  View weekly charts of your app launches for self-reflection.
+
+- **Task Scheduler**  
+  Create recurring reminders (e.g. “Review screen time daily”) right in the app.
+
+
 
 ---
 
-## Demo
+## 🎬 Demo
 
-<img src="docs/screenshot_lock.png" alt="Lock screen" width="200" />  
-<img src="docs/screenshot_summary.png" alt="Usage summary" width="200" />
+<table>
+  <tr>
+    <td><img src="docs/screenshot_lock.png" width="300"/></td>
+    <td><img src="docs/screenshot_summary.png" width="300"/></td>
+  </tr>
+</table>
+
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -49,15 +70,17 @@
 - Android SDK 21+  
 - Kotlin 1.7+  
 
-### Installation
+### 📥 Installation
 
 ##### If running on Android Studio
 1. Clone this repo  
    ```bash
    git clone https://github.com/Scatter2Darknes/AppBlockv1.0
-   cd appblock
-2. Open in Android Studio
-3. Build & run on your device/emulator
+2. Run this command in terminal
+    ```bash 
+    cd appblock
+3. Open in Android Studio
+4. Build & run on your device/emulator
     
 ##### 📦 Download For Android Mobile Device
 
@@ -72,9 +95,9 @@ Grab the latest APK and sideload it onto your device:
 
 ---
 
-## Usage
+## 📊 Usage
 
-1. **First Launch & Permissions**  
+### 1. **Granting Permissions**  
    - Open the app.  
    - Tap **Grant Permissions** to cycle through each required setting:  
      1. **App Usage Access** → toggles the Usage-Access screen  
@@ -83,29 +106,31 @@ Grab the latest APK and sideload it onto your device:
      4. **Accessibility Service** → toggles the Accessibility screen  
    - Once _all four_ are granted, the **Manage Blocked Apps** and **View Blocked Apps** buttons appear.
 
-2. **Manage Your Blocked Apps**  
+### 2. **Manage Your Blocked Apps**  
    - Tap **Manage Blocked Apps**.  
    - In the list, toggle the checkbox next to any app you want to block.  
    - Configure each app’s **Delay** (soft-lock), or **Time Lock** window.
 
-3. **Using Soft-Lock & Shame Screens**  
+### 3. **Using Soft-Lock & Shame Screens**  
    - When you launch a blocked app:  
      - If you’ve configured a delay, you’ll get a countdown notification.  
      - If no delay is set, or during your “off hours,” you’ll see a brief “shame” screen reminding you of your goal.
 
-4. **View Your Stats**  
+### 4. **View Your Stats**  
    - Switch to the **Summary** tab via the bottom navigation to see your weekly usage graph.  
    - Switch to the **Tasks** tab to schedule recurring reminders (e.g., “Check screen time daily”).
 
-5. **Disabling a Block**  
+### 5. **Disabling a Block**  
    - Reopen **Manage Blocked Apps** and untoggle an app’s checkbox to remove its block.  
    - All per-app settings (delay & time windows) are saved across sessions.
 
-6. **Manage Tasks**
-    - Switch to the **Tasks** tab via the bottom navigation to (see/add/modify) your tasks.
-    - Can check tasks as **completed** via clicking checkbox or edit tasks by clicking on them.
+### 6. **Manage Tasks**
+   - Switch to the **Tasks** tab via the bottom navigation to (see/add/modify) your tasks.
+   - Can check tasks as **completed** via clicking checkbox or edit tasks by clicking on them.
+
+---
     
-## Configuration
+## ⚙️ Configuration
 
 You can tweak the following settings to customize how AppBlock behaves:
 
@@ -154,7 +179,9 @@ You can tweak the following settings to customize how AppBlock behaves:
     - `res/menu/bottom_nav_menu.xml`: replace icons or title as needed
     - `res/layout/overlay_blocking.xml`: customize your overlay/shame screen appearance
 
-# 📁 Project Structure (TODO)
+---
+
+## 📁 Project Structure
 
 ```
 app-block/
@@ -211,8 +238,8 @@ app-block/
 ├── README.md
 └── LICENSE
 ```
-
-## License
+---
+## 📜 License
 
 Copyright (c) 2025 Kevin Chan, Jasper Ha, Justin Guan, Sahir Mukadam & Grishen Hestiyas
 
