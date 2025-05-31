@@ -1,10 +1,11 @@
-# 🛑 App Block 🛑
+# 🛑 App Block 🛑 <a id="top"></a>
 ## _Stop the Scroll, Embrace the Control_
 
 > An Android app to help you curb distracting apps by shaming, delaying, and summarizing your usage.
 
 ---
 
+<a id="table-of-contents"></a>
 ## 📑 Table of Contents
 
 - [Features](#features)  
@@ -17,7 +18,13 @@
   - [Manage Your Blocked Apps](#manage-your-blocked-apps)
   - [Usage Summary](#usage-summary)
   - [Manage Tasks](#manage-tasks)
-- [Configuration](#configuration)  
+- [Configuration](#configuration)
+  - [Build](#build-manifest)
+  - [Resources](#resources)
+  - [Defaults](#defaults)
+  - [Excluded Apps](#excluded-apps)
+  - [Menu & Layout](#menu-&-layout)
+  
 - [Project Structure](#project-structure)  
 - [License](#license)
 
@@ -26,6 +33,7 @@
 
 ---
 
+<a id="features"></a>
 ## ✨ Features
 
 - **Accessibility-powered Real-time App Detection**  
@@ -50,26 +58,50 @@
 
 ---
 
+<a id="demo"></a>
 ## 🎬 Demo
 
 <table>
   <tr>
-    <td><img src="docs/screenshot_lock.png" width="300"/></td>
-    <td><img src="docs/screenshot_summary.png" width="300"/></td>
+    <td><img src="images/lock_menu_no_perms.png" width="300"/></td>
+    <td><img src="images/lock_menu.png" width="300"/></td>
+    <td><img src="images/manage_blocked_apps_list.png" width="300"/></td>
+    <td><img src="images/app_dialog_lock_configurations.png" width="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="images/view_blocked_apps_list.png" width="300"/></td>
+    <td><img src="images/summary_menu_weekly.png" width="300"/></td>
+    <td><img src="images/task_menu_incompleted.png" width="300"/></td>
+    <td><img src="images/create_task.png" width="300"/></td>
+    
+
+  </tr>
+  <tr>
+    <td><img src="images/task_menu_confirm_task.png" width="300"/></td>
+    <td><img src="images/task_menu_edit_dialog.png" width="300"/></td>
+    <td><img src="images/task_menu_completed.png" width="300"/></td>
+    <td><img src="images/delay_youtube.png" width="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="images/delay_tiktok.png" width="300"/></td>
+    <td><img src="images/time_restriction_shorts.png" width="300"/></td>
   </tr>
 </table>
 
 
 ---
 
+<a id="getting-started"></a>
 ## 🚀 Getting Started
 
+<a id="prerequisites"></a>
 ### Prerequisites
 
 - Android Studio Arctic Fox or later  
 - Android SDK 21+  
 - Kotlin 1.7+  
 
+<a id="installation"></a>
 ### 📥 Installation
 
 ##### If running on Android Studio
@@ -95,8 +127,10 @@ Grab the latest APK and sideload it onto your device:
 
 ---
 
+<a id="usage"></a>
 ## 📊 Usage
 
+<a id="granting-permissions"></a>
 ### 1. **Granting Permissions**  
    - Open the app.  
    - Tap **Grant Permissions** to cycle through each required setting:  
@@ -105,7 +139,9 @@ Grab the latest APK and sideload it onto your device:
      3. **Notifications** → system dialog for POST_NOTIFICATIONS  
      4. **Accessibility Service** → toggles the Accessibility screen  
    - Once _all four_ are granted, the **Manage Blocked Apps** and **View Blocked Apps** buttons appear.
+   - If _**not all four**_ are granted, the above will not appear and access to lock features will be hidden.
 
+<a id="manage-your-blocked-apps"></a>
 ### 2. **Manage Your Blocked Apps**  
    - Tap **Manage Blocked Apps**.  
    - In the list, toggle the checkbox next to any app you want to block.  
@@ -115,25 +151,30 @@ Grab the latest APK and sideload it onto your device:
    - When you launch a blocked app:  
      - If you’ve configured a delay, you’ll get a countdown notification.  
      - If no delay is set, or during your “off hours,” you’ll see a brief “shame” screen reminding you of your goal.
-
-### 4. **View Your Stats**  
-   - Switch to the **Summary** tab via the bottom navigation to see your weekly usage graph.  
-   - Switch to the **Tasks** tab to schedule recurring reminders (e.g., “Check screen time daily”).
-
-### 5. **Disabling a Block**  
+    
+### 4. **Disabling a Block**  
    - Reopen **Manage Blocked Apps** and untoggle an app’s checkbox to remove its block.  
    - All per-app settings (delay & time windows) are saved across sessions.
 
+<a id="usage-summary"></a>
+### 5. **View Your Stats**  
+   - Switch to the **Summary** tab via the bottom navigation to see your daily/weekly usage.  
+   - The most used apps will apear at the top.
+
+
+<a id="manage-tasks"></a>
 ### 6. **Manage Tasks**
    - Switch to the **Tasks** tab via the bottom navigation to (see/add/modify) your tasks.
    - Can check tasks as **completed** via clicking checkbox or edit tasks by clicking on them.
 
 ---
-    
+
+<a id="configuration"></a>
 ## ⚙️ Configuration
 
 You can tweak the following settings to customize how AppBlock behaves:
 
+<a id="build-manifest"></a>
 1. **Build & Manifest**  
    - `minSdkVersion` (in `build.gradle`): minimum supported Android version (default: 21)  
    - `targetSdkVersion` (in `build.gradle`): should match latest SDK (e.g. 35)  
@@ -145,100 +186,158 @@ You can tweak the following settings to customize how AppBlock behaves:
      <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
      <meta-data android:name="android.allow_usage_access" android:value="true"/>
      ```
-
+<a id="resources"></a>
 2. **Resources**  
    - `res/values/strings.xml` (notification channel):  
      ```xml
-     <string name="blocking_channel_name">Blocking Notifications</string>
-     <string name="blocking_channel_description">Reminders and status updates when you open a blocked app.</string>
-     ```  
+     <<string name="invalid_delay">Enter a number ≥1</string>
+     ```
    - `res/values/colors.xml`:  
      ```xml
      <color name="purple_500">#6200EE</color>
      <color name="red">#F44336</color>
      ```
-
+   - `res/anim/fade_in.xml`:
+     ```xml
+     android:duration="300"
+     ```
+<a id="defaults"></a>
 3. **Defaults & Constants**  
    ```kotlin
-   // DEFAULT_BLOCK_DELAY_SEC in AppConstants.kt
-   const val DEFAULT_BLOCK_DELAY_SEC = 10
-
+   // blockDelay in AppInfo.kt
+   var blockDelay: Int = 10 // 10 second delay on default
+   
    // pollInterval in AppLaunchDetector.kt
    private val pollInterval = 1000L // (1 second)
    private val notificationCooldown = 2000L // (2 seconds)
-
+  ```
+<a id="excluded-apps"></a>
 4. **Excluded Apps**
-    - Edit `ExcludedApps.kt` to add/remove package names that should never be blocked
-    - Default packages include:
-    -- `com.android.settings` System Settings
-    -- `com.example.appblock`  App Block itself
-    -- `com.android.phone` Phone dialer
-    -- `com.google.android.dialer`
-    -- `com.android.emergency` Emergency Services
+   - Edit `ExcludedApps.kt` to add/remove package names that should never be blocked
+   - Default packages include:
+      - `com.android.settings` System Settings
+      - `com.example.appblock`  App Block itself
+      - `com.android.phone` Phone dialer
+      - `com.google.android.dialer`
+      - `com.android.emergency` Emergency Services
+    
+<a id="menu-&-layout"></a>
 5. **Menu & Layout**
-    - `res/menu/bottom_nav_menu.xml`: replace icons or title as needed
-    - `res/layout/overlay_blocking.xml`: customize your overlay/shame screen appearance
+   - `res/menu/bottom_nav_menu.xml`: replace icons or title as needed
+   - `res/layout/overlay_blocking.xml`: customize your overlay/shame screen appearance
 
 ---
 
+<a id="project-structure"></a>
 ## 📁 Project Structure
 
 ```
-app-block/
+AppBlock/
+├── .gitignore
+├── .kotlin/
+│ └── sessions/
 ├── app/
+│ ├── .gitignore
+│ ├── build.gradle.kts ← module-level Gradle script (app)
+│ ├── kevin_changes.txt ← developer notes / changelog
+│ ├── proguard-rules.pro ← ProGuard/R8 configuration
 │ ├── src/
+│ │ ├── androidTest/
+│ │ │ └── java/com/example/appblock/ExampleInstrumentedTest.kt
 │ │ ├── main/
+│ │ │ ├── AndroidManifest.xml
 │ │ │ ├── java/com/example/appblock/
-│ │ │ │ ├── accessibility/
-│ │ │ │ │ └── AppBlockAccessibilityService.kt
-│ │ │ │ ├── data/
-│ │ │ │ │ ├── AppInfo.kt
-│ │ │ │ │ └── TimeRange.kt
-│ │ │ │ ├── detectors/
-│ │ │ │ │ └── AppLaunchDetector.kt
-│ │ │ │ ├── storage/
-│ │ │ │ │ └── StorageHelper.kt
-│ │ │ │ ├── services/
-│ │ │ │ │ └── BlockingOverlayService.kt
-│ │ │ │ ├── ui/
-│ │ │ │ │ ├── main/
-│ │ │ │ │ │ └── MainActivity.kt
-│ │ │ │ │ ├── dashboard/
-│ │ │ │ │ │ ├── DashboardActivity.kt
-│ │ │ │ │ │ └── fragments/
-│ │ │ │ │ │ ├── LockFragment.kt
-│ │ │ │ │ │ ├── SummaryFragment.kt
-│ │ │ │ │ │ └── TaskFragment.kt
-│ │ │ │ │ └── adapter/
-│ │ │ │ │ └── AppAdapter.kt
-│ │ │ │ ├── utils/
-│ │ │ │ │ └── NotificationHelper.kt
-│ │ │ │ └── AppBlockApplication.kt
-│ │ │ ├── res/
-│ │ │ │ ├── layout/
-│ │ │ │ │ ├── activity_main.xml
-│ │ │ │ │ ├── activity_dashboard.xml
-│ │ │ │ │ ├── fragment_lock.xml
-│ │ │ │ │ └── dialog_app_details.xml
-│ │ │ │ ├── menu/
-│ │ │ │ │ └── bottom_nav_menu.xml
-│ │ │ │ ├── drawable/
-│ │ │ │ ├── values/
-│ │ │ │ └── xml/
-│ │ │ │ ├── accessibility_service_config.xml
-│ │ │ │ └── backup_rules.xml
-│ │ │ └── AndroidManifest.xml
-│ │ └── test/…
-│ ├── build.gradle
+│ │ │ │ ├── AppAdapter.kt
+│ │ │ │ ├── AppBlockAccessibilityService.kt
+│ │ │ │ ├── AppBlockApplication.kt
+│ │ │ │ ├── AppInfo.kt
+│ │ │ │ ├── AppLaunchDetector.kt
+│ │ │ │ ├── AppListActivity.kt
+│ │ │ │ ├── BlockedAppsActivity.kt
+│ │ │ │ ├── BlockingOverlayService.kt
+│ │ │ │ ├── DashboardActivity.kt
+│ │ │ │ ├── ExcludedApps.kt
+│ │ │ │ ├── lock/LockFragment.kt
+│ │ │ │ ├── MainActivity.kt
+│ │ │ │ ├── MonitoredAppsActivity.kt
+│ │ │ │ ├── NotificationHelper.kt
+│ │ │ │ ├── summary/
+│ │ │ │ │ ├── AppUsageInfo.kt
+│ │ │ │ │ ├── SummaryAdapter.kt
+│ │ │ │ │ ├── SummaryFragment.kt
+│ │ │ │ │ └── SummaryActivity.kt
+│ │ │ │ ├── tasks/
+│ │ │ │ │ ├── Task.kt
+│ │ │ │ │ ├── TaskDueReceiver.kt
+│ │ │ │ │ └── TaskFragment.kt
+│ │ │ │ ├── TimeRange.kt
+│ │ │ │ ├── ui/theme/
+│ │ │ │ │ ├── Color.kt
+│ │ │ │ │ ├── Theme.kt
+│ │ │ │ │ └── Type.kt
+│ │ │ │ └── UsagePermissions.kt
+│ │ │ └── res/
+│ │ │ ├── anim/ (fade, slide, shake animations)
+│ │ │ ├── color/nav_item_color.xml
+│ │ │ ├── drawable/ (icons, vector assets, blocked-app icons, etc.)
+│ │ │ ├── layout/ (all XML layouts: activities, fragments)
+│ │ │ ├── mipmap-xxxhdpi/ (launcher icons)
+│ │ │ ├── transition/ (slide animations for fragment transitions)
+│ │ │ ├── values/ (colors.xml, strings.xml, themes.xml)
+│ │ │ ├── values-night/ (night mode overrides)
+│ │ │ ├── values-v29/ (API 29+ specific overrides)
+│ │ │ └── xml/ (accessibility_service_config.xml, backup_rules.xml, data_extraction_rules.xml)
+│ │ └── test/
+│ │ └── java/com/example/appblock/ExampleUnitTest.kt
 │ └── proguard-rules.pro
-├── build.gradle
-├── settings.gradle
+├── App Block.zip ← a packaged build or backup of the entire project
+├── AppBlock_v0.0.0.zip ← older release archive (v0.0.0)
+├── ave ← (extra file; remove if unused)
+├── build.gradle.kts ← top-level Gradle build script
 ├── gradle/
+│ ├── libs.versions.toml
 │ └── wrapper/
-├── README.md
-└── LICENSE
+│ ├── gradle-wrapper.jar
+│ └── gradle-wrapper.properties
+├── gradle.properties ← project-wide Gradle settings
+├── gradlew ← Unix-shell Gradle wrapper
+├── gradlew.bat ← Windows Gradle wrapper
+├── README.md ← this file (overview, how to build/use)
+└── settings.gradle.kts ← includes the :app module
+
 ```
+
+- **`app/`**  
+  - Android application module. Core Kotlin code lives under `src/main/java/com/example/appblock/`.  
+  - `build.gradle.kts` configures dependencies, SDK versions, Kotlin settings.  
+  - `proguard-rules.pro` holds ProGuard/R8 rules.  
+  - `src/androidTest/` contains instrumentation tests (run on device/emulator).  
+  - `src/main/AndroidManifest.xml` declares activities, services, and permissions.  
+  - `src/main/res/` contains all XML resources (layouts, drawables, colors, themes, animations, etc.).  
+  - `src/test/` contains local unit tests (run on the JVM).
+
+- **`AppLaunchDetector.kt`**, **`BlockingOverlayService.kt`**, etc. (inside `app/src/main/java/com/example/appblock/`)
+  - Implement the lock/delay/time-restriction logic (app blocking and overlays).
+
+- **`summary/`** (inside `app/src/main/java/com/example/appblock/`)  
+  - Holds code for the Usage Summary feature (e.g., `AppUsageInfo.kt`, `SummaryFragment.kt`).
+
+- **`tasks/`** (inside `app/src/main/java/com/example/appblock/`)  
+  - Contains the Tasks/Checklist feature (e.g., `Task.kt`, `TaskFragment.kt').
+
+- **`gradle/`**, **`gradlew`**, **`gradlew.bat`**, **`build.gradle.kts`**, **`settings.gradle.kts`**, and **`gradle.properties`**  
+  - Standard Gradle wrapper and project configuration files.  
+  - Ensure anyone can build without installing Gradle separately.
+
+- **`.kotlin/`**  
+  - IDE session files. Can be ignored in version control.
+
+- **`.gitignore`**  
+  - Specifies files/folders Git should ignore (build outputs, IDE settings, local logs).
+
 ---
+
+<a id="license"></a>
 ## 📜 License
 
 Copyright (c) 2025 Kevin Chan, Jasper Ha, Justin Guan, Sahir Mukadam & Grishen Hestiyas
@@ -246,3 +345,5 @@ Copyright (c) 2025 Kevin Chan, Jasper Ha, Justin Guan, Sahir Mukadam & Grishen H
 All Rights Reserved.
 
 This software and associated documentation files (the “Software”) are the exclusive property of [Your Name or Organization]. No part of the Software may be reproduced, distributed, modified, transmitted, or used in any form or by any means, whether electronic or mechanical, without the prior written permission of the copyright holder.
+
+[Go back to the top](#top) or to [Table of Contents](#table-of-contents)
