@@ -1,7 +1,6 @@
 package com.example.appblock.summary
 
 import com.example.appblock.R
-//import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -11,15 +10,10 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-//import android.widget.LinearLayout
-//import android.widget.ImageView
-//import android.widget.TextView
-import android.widget.Spinner
-import android.widget.ArrayAdapter
-import android.widget.AdapterView
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -27,156 +21,114 @@ class SummaryFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: AppUsageAdapter
-    private lateinit var timePeriodSpinner: Spinner
+    private lateinit var timeSpinner: Spinner
     private val appUsageList = mutableListOf<AppUsageInfo>()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_summary, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        timePeriodSpinner = view.findViewById(R.id.spinnerTimePeriod)
+        timeSpinner = view.findViewById(R.id.spinnerTimePeriod)
         recyclerView = view.findViewById(R.id.recyclerViewAppUsage)
         adapter = AppUsageAdapter(appUsageList)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
 
-        setupTimePeriodSpinner()
-        checkUsageStatsPermission()
+        setupTimeSpinner()
+        checkUsagePermission()
     }
 
-    private fun setupTimePeriodSpinner() {
-        val timePeriods = arrayOf("Daily", "Weekly", "Monthly")
-        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, timePeriods)
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        timePeriodSpinner.adapter = spinnerAdapter
+    private fun setupTimeSpinner() {
+        val options = arrayOf("Daily", "Weekly", "Monthly")
+        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, options).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        timeSpinner.adapter = spinnerAdapter
 
-        timePeriodSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        timeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 loadAppUsageData()
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
 
-    private fun checkUsageStatsPermission() {
+    private fun checkUsagePermission() {
         val usageStatsManager = requireContext().getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val calendar = Calendar.getInstance()
-        val endTime = calendar.timeInMillis
-        calendar.add(Calendar.DAY_OF_YEAR, -1)
-        val startTime = calendar.timeInMillis
+        val now = Calendar.getInstance()
+        val end = now.timeInMillis
+        now.add(Calendar.DAY_OF_YEAR, -1)
+        val start = now.timeInMillis
 
-        val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            startTime,
-            endTime
-        )
+        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, start, end)
 
-        if (usageStatsList.isEmpty()) {
-            // Permission not granted, redirect to settings
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-            startActivity(intent)
+        if (stats.isNullOrEmpty()) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         } else {
             loadAppUsageData()
         }
     }
 
-    private fun getTimeRange(position: Int): Pair<Long, Long> {
+    private fun getTimeRange(type: Int): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
-        val endTime = calendar.timeInMillis
+        val end = calendar.timeInMillis
 
-        when (position) {
-            0 -> { // Daily
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-            }
-            1 -> { // Weekly
-                calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-            }
-            2 -> { // Monthly
-                calendar.set(Calendar.DAY_OF_MONTH, 1)
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-            }
+        when (type) {
+            0 -> calendar.apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
+            1 -> calendar.apply { set(Calendar.DAY_OF_WEEK, firstDayOfWeek); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
+            2 -> calendar.apply { set(Calendar.DAY_OF_MONTH, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }
         }
 
-        return Pair(calendar.timeInMillis, endTime)
+        return calendar.timeInMillis to end
     }
 
     private fun loadAppUsageData() {
         val usageStatsManager = requireContext().getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val packageManager = requireContext().packageManager
+        val pm = requireContext().packageManager
+        val position = timeSpinner.selectedItemPosition
+        val (start, end) = getTimeRange(position)
 
-        val selectedPosition = timePeriodSpinner.selectedItemPosition
-        val (startTime, endTime) = getTimeRange(selectedPosition)
-
-        val interval = when (selectedPosition) {
+        val interval = when (position) {
             0 -> UsageStatsManager.INTERVAL_DAILY
             1 -> UsageStatsManager.INTERVAL_WEEKLY
             2 -> UsageStatsManager.INTERVAL_MONTHLY
             else -> UsageStatsManager.INTERVAL_DAILY
         }
 
-        val usageStatsList = usageStatsManager.queryUsageStats(
-            interval,
-            startTime,
-            endTime
-        )
-
+        val stats = usageStatsManager.queryUsageStats(interval, start, end)
         appUsageList.clear()
 
-        for (usageStats in usageStatsList) {
-            if (usageStats.totalTimeInForeground > 0) {
+        stats?.forEach { stat ->
+            if (stat.totalTimeInForeground > 0) {
                 try {
-                    val appInfo = packageManager.getApplicationInfo(usageStats.packageName, 0)
-                    val appName = packageManager.getApplicationLabel(appInfo).toString()
-                    val appIcon = packageManager.getApplicationIcon(usageStats.packageName)
+                    val info = pm.getApplicationInfo(stat.packageName, 0)
+                    val name = pm.getApplicationLabel(info).toString()
+                    val icon = pm.getApplicationIcon(stat.packageName)
+                    val usageStr = formatUsageTime(stat.totalTimeInForeground)
 
-                    val usageTime = formatUsageTime(usageStats.totalTimeInForeground)
-
-                    appUsageList.add(
-                        AppUsageInfo(
-                            appName = appName,
-                            packageName = usageStats.packageName,
-                            usageTime = usageTime,
-                            usageTimeMs = usageStats.totalTimeInForeground,
-                            appIcon = appIcon
-                        )
-                    )
+                    appUsageList.add(AppUsageInfo(name, stat.packageName, usageStr, stat.totalTimeInForeground, icon))
                 } catch (e: PackageManager.NameNotFoundException) {
-                    // App might be uninstalled, skip
+                    // App uninstalled or hidden; skip it
                 }
             }
         }
 
-        // Sort by usage time (descending)
         appUsageList.sortByDescending { it.usageTimeMs }
         adapter.notifyDataSetChanged()
     }
 
-    private fun formatUsageTime(timeInMs: Long): String {
-        val hours = TimeUnit.MILLISECONDS.toHours(timeInMs)
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(timeInMs) % 60
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(timeInMs) % 60
-
+    private fun formatUsageTime(ms: Long): String {
+        val hrs = TimeUnit.MILLISECONDS.toHours(ms)
+        val min = TimeUnit.MILLISECONDS.toMinutes(ms) % 60
+        val sec = TimeUnit.MILLISECONDS.toSeconds(ms) % 60
         return when {
-            hours > 0 -> "${hours}h ${minutes}m"
-            minutes > 0 -> "${minutes}m ${seconds}s"
-            else -> "${seconds}s"
+            hrs > 0 -> "${hrs}h ${min}m"
+            min > 0 -> "${min}m ${sec}s"
+            else -> "${sec}s"
         }
     }
 
