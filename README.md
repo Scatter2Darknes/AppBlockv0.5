@@ -25,7 +25,8 @@
   - [Excluded Apps](#excluded-apps)
   - [Menu & Layout](#menu-&-layout)
   
-- [Project Structure](#project-structure)  
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
 - [License](#license)
 
 </details>
@@ -337,6 +338,13 @@ AppBlock/
 
 ---
 
+<a id="documentation"></a>
+## 📝 Documentation
+
+[https://drive.google.com/drive/folders/1mJUyB9X5mYQbTfpA6njh9N3chTcozOD0](https://drive.google.com/drive/folders/1mJUyB9X5mYQbTfpA6njh9N3chTcozOD0)
+
+---
+
 <a id="license"></a>
 ## 📜 License
 
@@ -344,6 +352,6 @@ Copyright (c) 2025 Kevin Chan, Jasper Ha, Justin Guan, Sahir Mukadam & Grishen H
 
 All Rights Reserved.
 
-This software and associated documentation files (the “Software”) are the exclusive property of [Your Name or Organization]. No part of the Software may be reproduced, distributed, modified, transmitted, or used in any form or by any means, whether electronic or mechanical, without the prior written permission of the copyright holder.
+This software and associated documentation files (the “Software”) are the exclusive property of App Block. No part of the software may be reproduced, distributed, modified, transmitted, or used in any form or by any means, whether electronic or mechanical, without the prior written permission of the copyright holder.
 
 [Go back to the top](#top) or to [Table of Contents](#table-of-contents)
